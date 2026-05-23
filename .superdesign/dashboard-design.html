@@ -1,0 +1,424 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard | Codebase Cartographer</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://code.iconify.design/iconify-icon/1.0.7/iconify-icon.min.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #0A0A0F;
+            color: #F1F5F9;
+            overflow-x: hidden;
+            cursor: crosshair;
+        }
+
+        .glass-card {
+            background: rgba(17, 17, 24, 0.6);
+            backdrop-filter: blur(12px);
+            border: 1px solid #1E1E2E;
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .glass-card:hover {
+            border-color: #6366F1;
+            box-shadow: 0 10px 40px -10px rgba(99, 102, 241, 0.4), 0 0 0 1px rgba(99, 102, 241, 0.2);
+            transform: translateY(-4px) scale(1.02);
+        }
+
+        .glass-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: radial-gradient(circle at var(--mouse-x, 50%) var(--mouse-y, 50%), rgba(99, 102, 241, 0.15) 0%, transparent 80%);
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .glass-card:hover::before {
+            opacity: 1;
+        }
+
+        .glow-border {
+            position: relative;
+        }
+
+        .glow-border::after {
+            content: '';
+            position: absolute;
+            inset: -1px;
+            background: linear-gradient(135deg, #6366F1, #06B6D4);
+            z-index: -1;
+            border-radius: inherit;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .glow-border:hover::after {
+            opacity: 0.3;
+        }
+
+        .status-badge-indexing {
+            animation: pulse-yellow 2s infinite;
+        }
+
+        @keyframes pulse-yellow {
+            0% { box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.4); }
+            70% { box-shadow: 0 0 0 8px rgba(245, 158, 11, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(245, 158, 11, 0); }
+        }
+
+        .custom-cursor {
+            width: 8px;
+            height: 8px;
+            background: #06B6D4;
+            border-radius: 50%;
+            position: fixed;
+            pointer-events: none;
+            z-index: 100;
+            transition: transform 0.1s ease-out;
+            box-shadow: 0 0 15px #06B6D4;
+        }
+
+        .search-input:focus {
+            border-color: #6366F1;
+            box-shadow: 0 0 15px rgba(99, 102, 241, 0.2);
+        }
+
+        /* Hide scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #0A0A0F;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #1E1E2E;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #6366F1;
+        }
+
+        .star-bg {
+            position: fixed;
+            inset: 0;
+            z-index: -1;
+            background: radial-gradient(circle at 50% 50%, #0D0D14 0%, #050510 100%);
+        }
+
+        .first-time-helper {
+            background: linear-gradient(90deg, rgba(99, 102, 241, 0.1), transparent);
+            border-left: 2px solid #6366F1;
+        }
+    </style>
+</head>
+<body>
+    <div class="custom-cursor" id="cursor"></div>
+    <div class="star-bg" id="starfield"></div>
+
+    <!-- Navbar -->
+    <nav class="fixed top-0 w-full z-50 bg-[#0A0A0F]/80 backdrop-blur-xl border-b border-[#1E1E2E] px-8 py-4 flex items-center justify-between">
+        <a href="#" id="nav-logo" class="flex items-center gap-2 group">
+            <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-[#6366F1] to-[#06B6D4] flex items-center justify-center">
+                <iconify-icon icon="lucide:map-pin" class="text-white text-lg"></iconify-icon>
+            </div>
+            <span class="text-xl font-bold tracking-tight">
+                <span class="text-[#F1F5F9]">Codebase</span>
+                <span class="text-[#06B6D4]"> Cartographer</span>
+            </span>
+        </a>
+
+        <div class="flex items-center gap-6">
+            <div class="relative group">
+                <button id="user-menu-btn" class="flex items-center gap-3 p-1 rounded-full hover:bg-white/5 transition-colors">
+                    <div class="w-8 h-8 rounded-full border border-[#1E1E2E] overflow-hidden bg-[#111118]">
+                        <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=Felix" alt="User avatar">
+                    </div>
+                    <span class="text-sm font-medium text-[#F1F5F9]">@felix_dev</span>
+                    <iconify-icon icon="lucide:chevron-down" class="text-muted text-xs"></iconify-icon>
+                </button>
+                <!-- Dropdown -->
+                <div class="absolute right-0 top-full mt-2 w-48 glass-card border-[#1E1E2E] rounded-xl opacity-0 translate-y-2 pointer-events-none group-hover:opacity-100 group-hover:translate-y-0 group-hover:pointer-events-auto transition-all">
+                    <div class="p-2">
+                        <a href="https://draft-82614752-a992-4987-b0f1-25f88b2fc714.preview.superdesign.dev" id="menu-settings" class="flex items-center gap-3 px-3 py-2 text-sm hover:bg-[#6366F1]/10 rounded-lg transition-colors">
+                            <iconify-icon icon="lucide:settings"></iconify-icon>
+                            Settings
+                        </a>
+                        <button class="w-full flex items-center gap-3 px-3 py-2 text-sm text-red-400 hover:bg-red-400/10 rounded-lg transition-colors">
+                            <iconify-icon icon="lucide:log-out"></iconify-icon>
+                            Disconnect
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="pt-24 pb-12 px-8 max-w-7xl mx-auto min-h-screen relative">
+        
+        <!-- EMPTY STATE (Toggleable with JS for demo) -->
+        <div id="empty-state" class="hidden flex flex-col items-center justify-center py-32 text-center">
+            <div class="relative mb-12">
+                <!-- Subtle 3D Grid Mock -->
+                <div class="w-64 h-64 rounded-full bg-gradient-to-br from-[#6366F1]/10 to-[#06B6D4]/10 blur-3xl absolute -inset-4"></div>
+                <div class="relative w-48 h-48 border border-[#1E1E2E] rounded-2xl flex items-center justify-center bg-[#111118]/50 overflow-hidden">
+                    <div class="absolute inset-0 opacity-20" style="background-image: radial-gradient(#1E1E2E 1px, transparent 1px); background-size: 20px 20px;"></div>
+                    <iconify-icon icon="lucide:map-pin" class="text-7xl text-[#6366F1] animate-bounce"></iconify-icon>
+                </div>
+            </div>
+            <h2 class="text-4xl font-bold mb-4">Map your first codebase</h2>
+            <p class="text-lg text-[#64748B] max-w-xl mb-10">
+                Connect a GitHub repo and the AI will index every file, function, and module for you.
+            </p>
+            <button onclick="toggleView()" class="cta-button inline-flex items-center gap-3 px-8 py-4 bg-[#6366F1] hover:bg-[#4F46E5] text-white rounded-full text-lg font-bold shadow-lg shadow-[#6366F1]/20">
+                Choose a Repository
+                <iconify-icon icon="lucide:arrow-right"></iconify-icon>
+            </button>
+            <p class="text-sm text-[#64748B] mt-6">
+                Works with public and private repos
+            </p>
+        </div>
+
+        <!-- RETURNING USER GRID -->
+        <div id="returning-state" class="block">
+            <div class="flex flex-col gap-8">
+                
+                <!-- Header Section -->
+                <div class="flex flex-col gap-4">
+                    <div class="flex items-center justify-between">
+                        <h1 class="text-4xl font-bold tracking-tight">Your Repositories</h1>
+                        <button onclick="toggleView()" class="px-4 py-2 bg-[#1E1E2E] hover:bg-[#2D2D3F] rounded-lg text-sm font-medium transition-colors border border-[#2D2D3F] flex items-center gap-2">
+                            <iconify-icon icon="lucide:plus"></iconify-icon>
+                            New Repo
+                        </button>
+                    </div>
+                    
+                    <!-- Onboarding Helper -->
+                    <div id="helper-banner" class="first-time-helper p-4 rounded-r-xl flex items-center justify-between group">
+                        <div class="flex items-center gap-3">
+                            <iconify-icon icon="lucide:sparkles" class="text-[#6366F1]"></iconify-icon>
+                            <p class="text-sm text-[#F1F5F9]/80">
+                                Select a repo to index it. Once indexed, you can ask the AI questions about it.
+                            </p>
+                        </div>
+                        <button onclick="this.parentElement.remove()" class="text-[#64748B] hover:text-white">
+                            <iconify-icon icon="lucide:x"></iconify-icon>
+                        </button>
+                    </div>
+
+                    <!-- Search Bar -->
+                    <div class="relative w-full">
+                        <iconify-icon icon="lucide:search" class="absolute left-4 top-1/2 -translate-y-1/2 text-[#64748B]"></iconify-icon>
+                        <input type="text" placeholder="Search repositories..." 
+                               class="search-input w-full pl-12 pr-4 py-3 bg-[#111118] border border-[#1E1E2E] rounded-xl text-[#F1F5F9] placeholder-[#64748B] outline-none transition-all">
+                    </div>
+                </div>
+
+                <!-- Grid -->
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    
+                    <!-- Repo Card: Ready -->
+                    <div class="glass-card p-6 rounded-2xl group flex flex-col" data-tilt>
+                        <div class="flex items-start justify-between mb-4">
+                            <div class="w-10 h-10 rounded-lg bg-[#6366F1]/10 flex items-center justify-center">
+                                <iconify-icon icon="lucide:github" class="text-2xl text-[#6366F1]"></iconify-icon>
+                            </div>
+                            <span class="px-2 py-1 rounded-md text-[10px] font-bold bg-[#10B981]/10 text-[#10B981] border border-[#10B981]/20 uppercase tracking-wider">Ready</span>
+                        </div>
+                        <h3 class="text-lg font-bold mb-2 truncate">cartographer-core</h3>
+                        <p class="text-sm text-[#64748B] line-clamp-2 mb-6">
+                            Main analysis engine for repository indexing and dependency graph generation.
+                        </p>
+                        <div class="flex items-center gap-4 mt-auto">
+                            <span class="flex items-center gap-1.5 text-xs text-[#64748B]">
+                                <div class="w-2 h-2 rounded-full bg-blue-400"></div>
+                                TypeScript
+                            </span>
+                            <a href="https://draft-5150539e-f2eb-455f-a7d9-26dcf504ce34.preview.superdesign.dev" id="repo-open-1" class="ml-auto inline-flex items-center gap-2 px-4 py-2 bg-[#10B981] hover:bg-[#059669] text-white text-xs font-bold rounded-lg transition-colors">
+                                Open
+                                <iconify-icon icon="lucide:chevron-right"></iconify-icon>
+                            </a>
+                        </div>
+                    </div>
+
+                    <!-- Repo Card: Indexing -->
+                    <div class="glass-card p-6 rounded-2xl group flex flex-col" data-tilt>
+                        <div class="flex items-start justify-between mb-4">
+                            <div class="w-10 h-10 rounded-lg bg-[#F59E0B]/10 flex items-center justify-center">
+                                <iconify-icon icon="lucide:refresh-cw" class="text-2xl text-[#F59E0B] animate-spin-slow"></iconify-icon>
+                            </div>
+                            <span class="px-2 py-1 rounded-md text-[10px] font-bold bg-[#F59E0B]/10 text-[#F59E0B] border border-[#F59E0B]/20 uppercase tracking-wider status-badge-indexing">Indexing...</span>
+                        </div>
+                        <h3 class="text-lg font-bold mb-2 truncate">nextjs-saas-template</h3>
+                        <p class="text-sm text-[#64748B] line-clamp-2 mb-4">
+                            A robust template for launching SaaS products with authentication and billing.
+                        </p>
+                        <div class="w-full bg-[#1E1E2E] h-1.5 rounded-full mb-6 overflow-hidden">
+                            <div class="h-full bg-gradient-to-r from-[#F59E0B] to-[#FCD34D] w-[65%]"></div>
+                        </div>
+                        <div class="flex items-center justify-between mt-auto">
+                            <span class="text-[10px] text-[#64748B]">Analyzing 143 files...</span>
+                            <span class="text-[10px] font-bold text-[#F59E0B]">65%</span>
+                        </div>
+                    </div>
+
+                    <!-- Repo Card: Not Indexed -->
+                    <div class="glass-card p-6 rounded-2xl group flex flex-col border-dashed bg-transparent" data-tilt>
+                        <div class="flex items-start justify-between mb-4">
+                            <div class="w-10 h-10 rounded-lg bg-[#1E1E2E] flex items-center justify-center">
+                                <iconify-icon icon="lucide:database-backup" class="text-2xl text-[#64748B]"></iconify-icon>
+                            </div>
+                            <span class="px-2 py-1 rounded-md text-[10px] font-bold bg-[#1E1E2E] text-[#64748B] border border-[#2D2D3F] uppercase tracking-wider">Not indexed</span>
+                        </div>
+                        <h3 class="text-lg font-bold mb-2 truncate">awesome-codebases</h3>
+                        <p class="text-sm text-[#64748B] line-clamp-2 mb-6">
+                            Curated list of high-quality repositories for architectural study.
+                        </p>
+                        <div class="flex items-center gap-4 mt-auto">
+                            <span class="flex items-center gap-1.5 text-xs text-[#64748B]">
+                                <div class="w-2 h-2 rounded-full bg-yellow-400"></div>
+                                Python
+                            </span>
+                            <a href="https://draft-032cb7d4-257c-44fe-9fbf-802ad14b41d2.preview.superdesign.dev" id="repo-index-1" class="ml-auto inline-flex items-center gap-2 px-4 py-2 bg-[#6366F1]/10 hover:bg-[#6366F1]/20 text-[#6366F1] border border-[#6366F1]/30 text-xs font-bold rounded-lg transition-colors">
+                                Index Repo
+                                <iconify-icon icon="lucide:zap"></iconify-icon>
+                            </a>
+                        </div>
+                    </div>
+
+                    <!-- Repo Card: Failed -->
+                    <div class="glass-card p-6 rounded-2xl group flex flex-col border-red-900/50 shadow-lg shadow-red-900/10" data-tilt>
+                        <div class="flex items-start justify-between mb-4">
+                            <div class="w-10 h-10 rounded-lg bg-red-900/10 flex items-center justify-center">
+                                <iconify-icon icon="lucide:alert-triangle" class="text-2xl text-red-500"></iconify-icon>
+                            </div>
+                            <span class="px-2 py-1 rounded-md text-[10px] font-bold bg-red-900/10 text-red-500 border border-red-500/20 uppercase tracking-wider">Failed</span>
+                        </div>
+                        <h3 class="text-lg font-bold mb-2 truncate">legacy-fortran-utils</h3>
+                        <p class="text-sm text-[#64748B] line-clamp-2 mb-6">
+                            Internal utility library for legacy mainframe data parsing.
+                        </p>
+                        <div class="flex items-center gap-4 mt-auto">
+                            <span class="flex items-center gap-1.5 text-xs text-[#64748B]">
+                                <div class="w-2 h-2 rounded-full bg-orange-400"></div>
+                                Fortran
+                            </span>
+                            <button class="ml-auto inline-flex items-center gap-2 px-4 py-2 border border-red-500/50 text-red-500 hover:bg-red-500/10 text-xs font-bold rounded-lg transition-colors">
+                                Retry
+                                <iconify-icon icon="lucide:refresh-cw"></iconify-icon>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Repo Card: Ready (Go) -->
+                    <div class="glass-card p-6 rounded-2xl group flex flex-col" data-tilt>
+                        <div class="flex items-start justify-between mb-4">
+                            <div class="w-10 h-10 rounded-lg bg-[#6366F1]/10 flex items-center justify-center">
+                                <iconify-icon icon="lucide:github" class="text-2xl text-[#6366F1]"></iconify-icon>
+                            </div>
+                            <span class="px-2 py-1 rounded-md text-[10px] font-bold bg-[#10B981]/10 text-[#10B981] border border-[#10B981]/20 uppercase tracking-wider">Ready</span>
+                        </div>
+                        <h3 class="text-lg font-bold mb-2 truncate">distributed-cache</h3>
+                        <p class="text-sm text-[#64748B] line-clamp-2 mb-6">
+                            High-performance distributed caching layer with Raft consensus.
+                        </p>
+                        <div class="flex items-center gap-4 mt-auto">
+                            <span class="flex items-center gap-1.5 text-xs text-[#64748B]">
+                                <div class="w-2 h-2 rounded-full bg-[#06B6D4]"></div>
+                                Go
+                            </span>
+                            <a href="#" id="repo-open-2" class="ml-auto inline-flex items-center gap-2 px-4 py-2 bg-[#10B981] hover:bg-[#059669] text-white text-xs font-bold rounded-lg transition-colors">
+                                Open
+                                <iconify-icon icon="lucide:chevron-right"></iconify-icon>
+                            </a>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <script>
+        // Custom Cursor Logic
+        const cursor = document.getElementById('cursor');
+        document.addEventListener('mousemove', (e) => {
+            cursor.style.transform = `translate(${e.clientX}px, ${e.clientY}px)`;
+        });
+
+        // Toggle between views (for demo purposes)
+        function toggleView() {
+            const empty = document.getElementById('empty-state');
+            const returning = document.getElementById('returning-state');
+            
+            if (empty.classList.contains('hidden')) {
+                empty.classList.remove('hidden');
+                returning.classList.add('hidden');
+            } else {
+                empty.classList.add('hidden');
+                returning.classList.remove('hidden');
+            }
+        }
+
+        // Simple 3D Tilt Effect
+        const cards = document.querySelectorAll('[data-tilt]');
+        cards.forEach(card => {
+            card.addEventListener('mousemove', e => {
+                const rect = card.getBoundingClientRect();
+                const x = e.clientX - rect.left;
+                const y = e.clientY - rect.top;
+                
+                card.style.setProperty('--mouse-x', `${(x / rect.width) * 100}%`);
+                card.style.setProperty('--mouse-y', `${(y / rect.height) * 100}%`);
+                
+                const xc = rect.width / 2;
+                const yc = rect.height / 2;
+                const dx = x - xc;
+                const dy = y - yc;
+                
+                card.style.transform = `perspective(1000px) rotateX(${-dy / 25}deg) rotateY(${dx / 25}deg) translateY(-4px) scale(1.02)`;
+            });
+
+            card.addEventListener('mouseleave', () => {
+                card.style.transform = '';
+            });
+        });
+
+        // Background Stars
+        const starfield = document.getElementById('starfield');
+        for (let i = 0; i < 100; i++) {
+            const star = document.createElement('div');
+            const size = Math.random() * 2;
+            star.style.position = 'absolute';
+            star.style.width = size + 'px';
+            star.style.height = size + 'px';
+            star.style.background = 'white';
+            star.style.borderRadius = '50%';
+            star.style.left = Math.random() * 100 + '%';
+            star.style.top = Math.random() * 100 + '%';
+            star.style.opacity = Math.random() * 0.5;
+            starfield.appendChild(star);
+        }
+    </script>
+</body>
+</html>

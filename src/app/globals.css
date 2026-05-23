@@ -87,6 +87,12 @@ body {
     border-radius: 4px;
 }
 
+/* ── Spin (Loader2 icon in indexing badge) ────────────────────────────────── */
+@keyframes spin {
+    from { transform: rotate(0deg); }
+    to   { transform: rotate(360deg); }
+}
+
 /* ── Landing page animations ──────────────────────────────────────────────── */
 @keyframes cc-shake {
     0%, 100% { transform: translate(0, 0); }
@@ -192,4 +198,105 @@ body {
 .cc-cta:hover {
     transform: translateY(-2px);
     box-shadow: 0 8px 30px rgba(255, 255, 255, 0.2);
+}
+
+/* ── Dashboard page ───────────────────────────────────────────────────────── */
+@keyframes cc-pulse-yellow {
+    0% { box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.4); }
+    70% { box-shadow: 0 0 0 8px rgba(245, 158, 11, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(245, 158, 11, 0); }
+}
+
+.cc-dashboard-page {
+    min-height: 100dvh;
+    background-color: #0a0a0f;
+    color: var(--text-primary);
+    cursor: none;
+}
+
+.cc-dashboard-star-bg {
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+    background: radial-gradient(circle at 50% 50%, #0d0d14 0%, #050510 100%);
+}
+
+.cc-dashboard-cursor {
+    width: 8px;
+    height: 8px;
+    background: #06b6d4;
+    border-radius: 50%;
+    position: fixed;
+    pointer-events: none;
+    z-index: 100;
+    transform: translate(-50%, -50%);
+    transition: transform 0.1s ease-out;
+    box-shadow: 0 0 15px #06b6d4;
+}
+
+.cc-dashboard-glass {
+    background: rgba(17, 17, 24, 0.6);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid var(--border);
+    transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    position: relative;
+    overflow: hidden;
+}
+
+.cc-dashboard-glass::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(
+        circle at var(--mouse-x, 50%) var(--mouse-y, 50%),
+        rgba(99, 102, 241, 0.15) 0%,
+        transparent 80%
+    );
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.cc-dashboard-glass:hover::before {
+    opacity: 1;
+}
+
+.cc-dashboard-glass:hover {
+    border-color: var(--indigo);
+    box-shadow:
+        0 10px 40px -10px rgba(99, 102, 241, 0.4),
+        0 0 0 1px rgba(99, 102, 241, 0.2);
+}
+
+.cc-dashboard-glass--dashed {
+    border-style: dashed;
+    background: transparent;
+}
+
+.cc-dashboard-glass--failed {
+    border-color: rgba(127, 29, 29, 0.5);
+    box-shadow: 0 10px 40px -10px rgba(127, 29, 29, 0.25);
+}
+
+.cc-first-time-helper {
+    background: linear-gradient(90deg, rgba(99, 102, 241, 0.1), transparent);
+    border-left: 2px solid var(--indigo);
+}
+
+.cc-status-indexing {
+    animation: cc-pulse-yellow 2s infinite;
+}
+
+.cc-dashboard-search:focus {
+    border-color: var(--indigo);
+    box-shadow: 0 0 15px rgba(99, 102, 241, 0.2);
+}
+
+.cc-dashboard-nav-dropdown {
+    background: rgba(17, 17, 24, 0.95);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid var(--border);
 }

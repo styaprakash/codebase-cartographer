@@ -71,8 +71,8 @@ export default function StarField() {
 
             // Parallax: stars move LESS than earth (they're "further away")
             container.style.transform =
-                `translate(${-(e.clientX / window.innerWidth  - 0.5) * 30}px,
-                   ${-(e.clientY / window.innerHeight - 0.5) * 30}px)`
+                `translate(${-(e.clientX / window.innerWidth  - 0.5) * 15}px,
+                   ${-(e.clientY / window.innerHeight - 0.5) * 15}px)`
         }
 
         // ── Attach + detach listener ─────────────────────────────────

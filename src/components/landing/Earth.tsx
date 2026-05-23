@@ -10,8 +10,8 @@ export default function Earth() {
             if (!earthRef.current) return
             // Earth moves MORE than stars (it's the "closest" layer)
             // Negative values make it move OPPOSITE to cursor (parallax feel)
-            const x = -(e.clientX / window.innerWidth  - 0.5) * 80
-            const y = -(e.clientY / window.innerHeight - 0.5) * 80
+            const x = -(e.clientX / window.innerWidth  - 0.5) * 40
+            const y = -(e.clientY / window.innerHeight - 0.5) * 40
             earthRef.current.style.transform = `translate(${x}px, ${y}px)`
         }
 
@@ -55,6 +55,20 @@ export default function Earth() {
           `,
                     position: 'relative',
                 }}>
+                    {/* Lens flare — bright spot at top-right that pulses */}
+                    <div style={{
+                        position: 'absolute',
+                        top: '-5%',
+                        right: '-5%',
+                        width: '15%',
+                        height: '15%',
+                        borderRadius: '50%',
+                        background: 'radial-gradient(circle, rgba(255,255,255,.9) 0%, rgba(255,255,255,.4) 30%, transparent 70%)',
+                        filter: 'blur(8px)',
+                        animation: 'cc-lens-flare 3s ease-in-out infinite',
+                        zIndex: 2,
+                    }} />
+
                     {/* Land masses via radial gradients — no image needed */}
                     <div style={{
                         width: '100%', height: '100%',
@@ -67,10 +81,25 @@ export default function Earth() {
               radial-gradient(circle at 40% 40%,#0d6676 0%,transparent 22%),
               radial-gradient(circle at 15% 30%,#0a4a5c 0%,transparent 12%),
               radial-gradient(circle at 85% 85%,#0d6676 0%,transparent 16%),
+              radial-gradient(circle at 50% 90%,#0a4a5c 0%,transparent 14%),
+              radial-gradient(circle at 30% 55%,#0d6676 0%,transparent 10%),
               linear-gradient(180deg,#1a5f7a 0%,#0d4a5c 50%,#0a3a4a 100%)
             `,
                         position: 'relative',
                     }}>
+                        {/* Specular sheen — 3D highlight across the surface */}
+                        <div style={{
+                            position: 'absolute', inset: 0,
+                            borderRadius: '50%',
+                            background: `
+                radial-gradient(circle at 30% 30%, transparent 0%, rgba(255,255,255,.4) 2%, transparent 4%),
+                radial-gradient(circle at 70% 70%, rgba(0,0,0,.3) 0%, transparent 50%),
+                linear-gradient(135deg, transparent 0%, rgba(255,255,255,.15) 50%, transparent 100%)
+              `,
+                            opacity: 0.8,
+                            zIndex: 1,
+                        }} />
+
                         {/* Cloud layer drifts independently */}
                         <div style={{
                             position: 'absolute', inset: 0,

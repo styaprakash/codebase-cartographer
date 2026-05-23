@@ -35,21 +35,39 @@ const FEATURES: Feature[] = [
 
 export default function FeatureCards() {
     return (
-        <div className="grid grid-cols-3 gap-4 max-w-3xl w-full">
-            {/* .map() replaces copy-pasting the same card 3 times */}
+        <div style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(3, minmax(0, 1fr))',
+            gap: '1rem',
+            width: '100%',
+            maxWidth: '48rem'
+        }}>
             {FEATURES.map(({ icon: Icon, label, color, bg }) => (
                 <div
-                    key={label}  // React needs a unique key when rendering lists
-                    className="cc-glass rounded-xl px-4 py-3 flex items-center gap-3"
+                    key={label}
+                    className="cc-glass rounded-xl"
+                    style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '1rem',
+                        padding: '0.75rem 1rem'
+                    }}
                 >
                     <div
-                        className="flex-shrink-0 w-9 h-9 rounded-lg flex items-center justify-center"
-                        style={{ backgroundColor: bg }}
+                        className="rounded-lg"
+                        style={{
+                            backgroundColor: bg,
+                            flexShrink: 0,
+                            width: '2.25rem',
+                            height: '2.25rem',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center'
+                        }}
                     >
-                        {/* Icon is a variable holding a component — uppercase = component */}
-                        <Icon size={16} style={{ color }} />
+                        <Icon size={18} style={{ color }} />
                     </div>
-                    <p className="text-xs font-semibold" style={{ color: '#F1F5F9' }}>
+                    <p style={{ color: '#F1F5F9', fontSize: '0.8125rem', fontWeight: 600 }}>
                         {label}
                     </p>
                 </div>

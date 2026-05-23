@@ -4,12 +4,22 @@ import { signIn } from 'next-auth/react'
 export default function GitHubButton() {
     return (
         <button
-            className="cc-cta inline-flex items-center gap-3 px-6 py-3
-                 rounded-full text-base font-semibold mb-3 bg-white text-black"
+            className="cc-cta bg-white text-black rounded-full font-semibold transition-transform"
+            style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '0.75rem',
+                padding: '0.75rem 1.5rem',
+                marginBottom: '0.75rem',
+                fontSize: '1rem',
+                whiteSpace: 'nowrap'
+            }}
             onClick={() => signIn('github', { callbackUrl: '/dashboard'})}
         >
-            <GitHubIcon />
-            Continue with GitHub
+            <div style={{ flexShrink: 0, display: 'flex' }}>
+                <GitHubIcon />
+            </div>
+            <span>Continue with GitHub</span>
         </button>
     )
 }

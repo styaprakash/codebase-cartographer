@@ -4,6 +4,7 @@ import StarField     from '@/components/landing/StarField'
 import Earth        from '@/components/landing/Earth'
 import FeatureCards from '@/components/landing/FeatureCards'
 import GitHubButton from '@/components/landing/GitHubButton'
+import CustomCursor from '@/components/landing/CustomCursor'
 
 
 export default function LandingPage() {
@@ -13,6 +14,8 @@ export default function LandingPage() {
             className="min-h-screen overflow-hidden relative"
             style={{ backgroundColor: '#050510', cursor: 'none' }}
         >
+            <CustomCursor />
+
             {/* ── Layer 1: Stars (furthest back, z-index 2) ── */}
             {/* Rendered first in DOM but z-index controls visual order */}
             <StarField />
@@ -30,23 +33,23 @@ export default function LandingPage() {
                 <div style={{ height: 240 }} />
 
                 {/* Headline */}
-                <h1 className="text-6xl font-bold mb-4 tracking-tight text-center">
+                <h1 className="text-6xl font-bold tracking-tight text-center" style={{ marginBottom: '1rem' }}>
                     <span style={{ color: '#F1F5F9' }}>Codebase</span>
                     <span style={{ color: '#06B6D4' }}> Cartographer</span>
                 </h1>
 
-                <p className="text-2xl font-semibold mb-3 text-center" style={{ color: '#F1F5F9' }}>
+                <p className="text-2xl font-semibold text-center" style={{ color: '#F1F5F9', marginBottom: '0.75rem' }}>
                     Understand any codebase in minutes.
                 </p>
 
-                <p className="text-base mb-8 text-center max-w-2xl" style={{ color: '#64748B' }}>
+                <p className="text-base text-center max-w-2xl" style={{ color: '#64748B', marginBottom: '2rem' }}>
                     Connect your GitHub repo → AI indexes your code → Ask anything in plain English
                 </p>
 
                 {/* GitHub CTA — onClick is empty for now, we wire NextAuth in Week 1 */}
                 <GitHubButton />
 
-                <p className="text-[10px] mb-10" style={{ color: '#64748B' }}>
+                <p className="text-[10px]" style={{ color: '#64748B', marginBottom: '2.5rem' }}>
                     No credit card. Free to try. Reads your repos, never writes.
                 </p>
 
