@@ -28,5 +28,5 @@ export default function DashboardStarfield() {
         container.appendChild(fragment)
     }, [])
 
-    return <div ref={containerRef} className="cc-dashboard-star-bg" aria-hidden />
+    return <div ref={containerRef} id="starfield" className="star-bg" aria-hidden />
 }

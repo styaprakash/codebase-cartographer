@@ -2,7 +2,6 @@
 
 import { useMemo, useState } from 'react'
 import { Plus } from 'lucide-react'
-import DashboardCursor from './DashboardCursor'
 import DashboardNav from './DashboardNav'
 import DashboardStarfield from './DashboardStarfield'
 import EmptyState from './EmptyState'
@@ -31,30 +30,56 @@ export default function DashboardContent({ repos }: DashboardContentProps) {
     }, [repos, query])
 
     return (
-        <div className="cc-dashboard-page relative">
+        <div style={{ position: 'relative', minHeight: '100vh', color: '#F1F5F9', overflowX: 'hidden' }}>
             <DashboardStarfield />
-            <DashboardCursor />
             <DashboardNav />
 
-            <main className="relative z-10 mx-auto min-h-screen max-w-7xl px-6 pb-12 pt-24 md:px-8">
+            <main
+                style={{
+                    paddingTop: '85px',
+                    paddingBottom: '56px',
+                    paddingLeft: '32px',
+                    paddingRight: '32px',
+                    position: 'relative',
+                    zIndex: 10,
+                    maxWidth: '1280px',
+                    margin: '0 auto',
+                    width: '100%',
+                }}
+            >
                 {!hasRepos ? (
                     <EmptyState />
                 ) : (
-                    <div className="flex flex-col gap-8">
-                        <div className="flex flex-col gap-4">
-                            <div className="flex flex-wrap items-center justify-between gap-4">
-                                <h1 className="text-4xl font-bold tracking-tight text-text-primary">
-                                    Your Repositories
-                                </h1>
-                                <button
-                                    type="button"
-                                    className="flex items-center gap-2 rounded-lg border border-[#2D2D3F] bg-[#1E1E2E] px-4 py-2 text-sm font-medium text-text-primary transition-colors hover:bg-[#2D2D3F]"
-                                >
-                                    <Plus className="h-4 w-4" />
-                                    New Repo
-                                </button>
-                            </div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
 
+                        {/* Header row */}
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                            <h1 style={{ fontSize: '32px', fontWeight: 700, color: '#F8FAFC', letterSpacing: '-0.02em' }}>
+                                Your Repositories
+                            </h1>
+                            <button
+                                type="button"
+                                style={{
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '8px',
+                                    padding: '10px 16px',
+                                    borderRadius: '12px',
+                                    backgroundColor: '#6366F1',
+                                    color: 'white',
+                                    fontSize: '14px',
+                                    fontWeight: 600,
+                                    border: 'none',
+                                    cursor: 'pointer',
+                                }}
+                            >
+                                <Plus size={16} />
+                                New Repo
+                            </button>
+                        </div>
+
+                        {/* Onboarding + Search */}
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                             <OnboardingBanner />
                             <RepoSearch value={query} onChange={setQuery} />
                         </div>

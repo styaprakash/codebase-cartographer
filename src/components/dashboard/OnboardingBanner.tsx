@@ -20,20 +20,20 @@ export default function OnboardingBanner() {
     if (!visible) return null
 
     return (
-        <div className="cc-first-time-helper flex items-center justify-between rounded-r-xl p-4">
+        <div id="helper-banner" className="first-time-helper p-4 rounded-r-xl flex items-center justify-between group">
             <div className="flex items-center gap-3">
-                <Sparkles className="h-4 w-4 shrink-0 text-indigo" />
-                <p className="text-sm text-text-primary/80">
+                <Sparkles className="text-[#6366F1] w-4 h-4" />
+                <p className="text-sm text-[#F1F5F9]/80">
                     Select a repo to index it. Once indexed, you can ask the AI questions about it.
                 </p>
             </div>
             <button
                 type="button"
                 onClick={dismiss}
-                className="ml-4 shrink-0 text-text-muted transition-colors hover:text-text-primary"
+                className="text-[#64748B] hover:text-white transition-colors"
                 aria-label="Dismiss"
             >
-                <X className="h-4 w-4" />
+                <X className="w-4 h-4" />
             </button>
         </div>
     )

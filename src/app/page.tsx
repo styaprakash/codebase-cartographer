@@ -4,17 +4,13 @@ import StarField     from '@/components/landing/StarField'
 import Earth        from '@/components/landing/Earth'
 import FeatureCards from '@/components/landing/FeatureCards'
 import GitHubButton from '@/components/landing/GitHubButton'
-import CustomCursor from '@/components/landing/CustomCursor'
-
-
 export default function LandingPage() {
     return (
         // Dark space background fills the whole viewport
         <main
             className="min-h-screen overflow-hidden relative"
-            style={{ backgroundColor: '#050510', cursor: 'none' }}
+            style={{ backgroundColor: '#050510' }}
         >
-            <CustomCursor />
 
             {/* ── Layer 1: Stars (furthest back, z-index 2) ── */}
             {/* Rendered first in DOM but z-index controls visual order */}

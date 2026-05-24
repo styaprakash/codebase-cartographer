@@ -10,13 +10,13 @@ interface RepoSearchProps {
 export default function RepoSearch({ value, onChange }: RepoSearchProps) {
     return (
         <div className="relative w-full">
-            <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-text-muted" />
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-[#64748B]" />
             <input
-                type="search"
+                type="text"
                 value={value}
                 onChange={(e) => onChange(e.target.value)}
                 placeholder="Search repositories..."
-                className="cc-dashboard-search w-full rounded-xl border border-border-dark bg-[#111118] py-3 pl-12 pr-4 text-text-primary outline-none transition-all placeholder:text-text-muted"
+                className="search-input w-full pl-12 pr-4 py-3 h-12 rounded-2xl bg-[#111118] border border-[#1E1E2E] text-[#F1F5F9] placeholder-[#64748B] outline-none transition-all"
             />
         </div>
     )

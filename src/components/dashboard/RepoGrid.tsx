@@ -6,7 +6,14 @@ interface RepoGridProps {
 
 export default function RepoGrid({ repos }: RepoGridProps) {
     return (
-        <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+        <div
+            style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(3, 1fr)',
+                gap: '16px',
+                width: '100%',
+            }}
+        >
             {repos.map((repo) => (
                 <RepoCard key={repo.title} {...repo} />
             ))}
