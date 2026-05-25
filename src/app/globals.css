@@ -316,3 +316,10 @@ body {
     border-left: 2px solid #6366F1;
 }
 
+/* For dropdown hover effect */
+.group:hover .group-hover-visible {
+    visibility: visible !important;
+    transform: translateY(0) !important;
+    opacity: 1 !important;
+    pointer-events: auto !important;
+}

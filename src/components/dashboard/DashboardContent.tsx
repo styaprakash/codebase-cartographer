@@ -59,17 +59,18 @@ export default function DashboardContent({ repos }: DashboardContentProps) {
                             </h1>
                             <button
                                 type="button"
+                                // Find the button and replace its style object with:
                                 style={{
                                     display: 'flex',
                                     alignItems: 'center',
                                     gap: '8px',
-                                    padding: '10px 16px',
-                                    borderRadius: '12px',
-                                    backgroundColor: '#6366F1',
-                                    color: 'white',
+                                    padding: '9px 16px',
+                                    borderRadius: '10px',
+                                    background: '#111118',
+                                    border: '1px solid #2D2D3F',
+                                    color: '#F1F5F9',
                                     fontSize: '14px',
                                     fontWeight: 600,
-                                    border: 'none',
                                     cursor: 'pointer',
                                 }}
                             >

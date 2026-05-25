@@ -1,83 +1,226 @@
 'use client'
 
-import Link from 'next/link'
-import { ChevronDown, LogOut, MapPin, Settings } from 'lucide-react'
-import { signOut, useSession } from 'next-auth/react'
+import Link from "next/link";
+import { ChevronDown, LogOut, MapPin, Settings } from "lucide-react";
+import { signOut, useSession } from "next-auth/react";
+import { useState, useRef, useEffect } from "react";
 
-function userHandle(name: string | null | undefined, email: string | null | undefined) {
+function userHandle(
+    name: string | null | undefined,
+    email: string | null | undefined,
+) {
     if (name) {
-        const handle = name.toLowerCase().replace(/\s+/g, '_')
-        return `@${handle}`
+        const handle = name.toLowerCase().replace(/\s+/g, "_");
+        return `@${handle}`;
     }
-    if (email) return `@${email.split('@')[0]}`
-    return '@user'
+    if (email) return `@${email.split("@")[0]}`;
+    return "@user";
 }
 
 export default function DashboardNav() {
-    const { data: session } = useSession()
-    const displayName = userHandle(session?.user?.name, session?.user?.email)
-    const avatarUrl = session?.user?.image
+    const { data: session } = useSession();
+    const displayName = userHandle(session?.user?.name, session?.user?.email);
+    const avatarUrl = session?.user?.image;
+    const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+    const dropdownRef = useRef<HTMLDivElement>(null);
+
+    // Close dropdown when clicking outside
+    useEffect(() => {
+        const handleClickOutside = (event: MouseEvent) => {
+            if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+                setIsDropdownOpen(false);
+            }
+        };
+
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, []);
 
     return (
         <nav className="fixed top-0 w-full z-50 bg-[#0A0A0F]/80 backdrop-blur-xl border-b border-[#1E1E2E]">
-            <div className="mx-auto flex h-16 w-full max-w-[1280px] items-center justify-between px-6">
-                <Link href="/" id="nav-logo" className="flex items-center gap-2 group">
-                    <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-[#6366F1] to-[#06B6D4] flex items-center justify-center">
-                        <MapPin className="text-white w-4 h-4" strokeWidth={2.5} />
-                    </div>
-                    <span className="text-xl font-bold tracking-tight">
-                        <span className="text-[#F1F5F9]">Codebase</span>
-                        <span className="text-[#06B6D4]"> Cartographer</span>
-                    </span>
-                </Link>
+            <div
+                style={{
+                    marginLeft: "1.5rem",
+                    marginRight: "1.5rem",
+                }}
+                className="flex h-16 items-center justify-between"
+            >
+                {/* LEFT SIDE - Logo */}
+                <div className="flex items-center">
+                    <Link
+                        href="/"
+                        id="nav-logo"
+                        className="flex items-center gap-2 group"
+                    >
+                        <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-[#6366F1] to-[#06B6D4] flex items-center justify-center">
+                            <MapPin className="text-white w-4 h-4" strokeWidth={2.5} />
+                        </div>
 
-                <div className="flex items-center gap-6">
-                    <div className="relative group">
+                        <span className="text-xl font-bold tracking-tight">
+                            <span className="text-[#F1F5F9]">Codebase</span>
+                            <span className="text-[#06B6D4]"> Cartographer</span>
+                        </span>
+                    </Link>
+                </div>
+
+                {/* RIGHT SIDE - User Menu */}
+                <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: '24px' }}>
+                    <div ref={dropdownRef} style={{ position: 'relative' }}>
                         <button
                             id="user-menu-btn"
                             type="button"
-                            className="flex items-center gap-3 p-1 rounded-full hover:bg-white/5 transition-colors"
+                            onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+                            style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '12px',
+                                borderRadius: '9999px',
+                                padding: '6px',
+                                backgroundColor: 'transparent',
+                                border: 'none',
+                                cursor: 'pointer',
+                                transition: 'background-color 0.2s',
+                            }}
+                            onMouseEnter={(e) => {
+                                e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.05)';
+                            }}
+                            onMouseLeave={(e) => {
+                                e.currentTarget.style.backgroundColor = 'transparent';
+                            }}
                             aria-haspopup="true"
                         >
-                            <div className="w-8 h-8 rounded-full border border-[#1E1E2E] overflow-hidden bg-[#111118]">
+                            <div style={{
+                                width: '40px',
+                                height: '40px',
+                                borderRadius: '9999px',
+                                border: '1px solid #1E1E2E',
+                                overflow: 'hidden',
+                                backgroundColor: '#111118',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                            }}>
                                 {avatarUrl ? (
-                                    // eslint-disable-next-line @next/next/no-img-element
-                                    <img src={avatarUrl} alt="User avatar" className="w-full h-full object-cover" />
+                                    <img
+                                        src={avatarUrl}
+                                        alt="User avatar"
+                                        style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                                    />
                                 ) : (
-                                    <div className="flex h-full w-full items-center justify-center bg-[#6366F1]/20 text-xs font-bold text-[#6366F1]">
-                                        {(session?.user?.name?.[0] ?? 'U').toUpperCase()}
+                                    <div style={{
+                                        display: 'flex',
+                                        height: '100%',
+                                        width: '100%',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        backgroundColor: 'rgba(99, 102, 241, 0.2)',
+                                        fontSize: '14px',
+                                        fontWeight: 'bold',
+                                        color: '#6366F1',
+                                    }}>
+                                        {(session?.user?.name?.[0] ?? "U").toUpperCase()}
                                     </div>
                                 )}
                             </div>
-                            <span className="text-sm font-medium text-[#F1F5F9]">
+
+                            <span style={{
+                                fontSize: '14px',
+                                fontWeight: 500,
+                                color: '#F1F5F9',
+                            }}>
                                 {displayName}
                             </span>
-                            <ChevronDown className="text-[#64748B] w-3 h-3" />
+
+                            <ChevronDown style={{ 
+                                width: '16px', 
+                                height: '16px', 
+                                color: '#64748B',
+                                transform: isDropdownOpen ? 'rotate(180deg)' : 'rotate(0deg)',
+                                transition: 'transform 0.2s',
+                            }} />
                         </button>
 
-                        <div className="absolute right-0 top-full mt-2 w-48 glass-card border-[#1E1E2E] rounded-xl opacity-0 translate-y-2 pointer-events-none group-hover:opacity-100 group-hover:translate-y-0 group-hover:pointer-events-auto transition-all">
-                            <div className="p-2">
-                                <Link
-                                    href="/settings"
-                                    id="menu-settings"
-                                    className="flex items-center gap-3 px-3 py-2 text-sm text-[#F1F5F9] hover:bg-[#6366F1]/10 rounded-lg transition-colors"
-                                >
-                                    <Settings className="w-4 h-4" />
-                                    Settings
-                                </Link>
-                                <button
-                                    type="button"
-                                    onClick={() => signOut({ callbackUrl: '/' })}
-                                    className="flex w-full items-center gap-3 px-3 py-2 text-sm text-red-400 hover:bg-red-400/10 rounded-lg transition-colors"
-                                >
-                                    <LogOut className="w-4 h-4" />
-                                    Disconnect
-                                </button>
+                        {isDropdownOpen && (
+                            <div 
+                                style={{
+                                    position: 'absolute',
+                                    right: 0,
+                                    top: '100%',
+                                    zIndex: 50,
+                                    marginTop: '12px',
+                                    width: '224px',
+                                    borderRadius: '12px',
+                                    border: '1px solid #1E1E2E',
+                                    backgroundColor: 'rgba(10, 10, 15, 0.95)',
+                                    backdropFilter: 'blur(12px)',
+                                    boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)',
+                                }}
+                            >
+                                <div style={{ padding: '8px' }}>
+                                    <Link
+                                        href="/settings"
+                                        id="menu-settings"
+                                        onClick={() => setIsDropdownOpen(false)}
+                                        style={{
+                                            display: 'flex',
+                                            width: '100%',
+                                            alignItems: 'center',
+                                            gap: '12px',
+                                            borderRadius: '8px',
+                                            padding: '10px 16px',
+                                            fontSize: '14px',
+                                            color: '#F1F5F9',
+                                            textDecoration: 'none',
+                                            transition: 'background-color 0.2s',
+                                            cursor: 'pointer',
+                                        }}
+                                        onMouseEnter={(e) => {
+                                            e.currentTarget.style.backgroundColor = 'rgba(99, 102, 241, 0.1)';
+                                        }}
+                                        onMouseLeave={(e) => {
+                                            e.currentTarget.style.backgroundColor = 'transparent';
+                                        }}
+                                    >
+                                        <Settings style={{ width: '16px', height: '16px' }} />
+                                        Settings
+                                    </Link>
+
+                                    <button
+                                        type="button"
+                                        onClick={() => {
+                                            setIsDropdownOpen(false);
+                                            signOut({ callbackUrl: "/" });
+                                        }}
+                                        style={{
+                                            display: 'flex',
+                                            width: '100%',
+                                            alignItems: 'center',
+                                            gap: '12px',
+                                            borderRadius: '8px',
+                                            padding: '10px 16px',
+                                            fontSize: '14px',
+                                            color: '#F87171',
+                                            backgroundColor: 'transparent',
+                                            border: 'none',
+                                            cursor: 'pointer',
+                                            transition: 'background-color 0.2s',
+                                        }}
+                                        onMouseEnter={(e) => {
+                                            e.currentTarget.style.backgroundColor = 'rgba(248, 113, 113, 0.1)';
+                                        }}
+                                        onMouseLeave={(e) => {
+                                            e.currentTarget.style.backgroundColor = 'transparent';
+                                        }}
+                                    >
+                                        <LogOut style={{ width: '16px', height: '16px' }} />
+                                        Disconnect
+                                    </button>
+                                </div>
                             </div>
-                        </div>
+                        )}
                     </div>
                 </div>
             </div>
         </nav>
-    )
+    );
 }

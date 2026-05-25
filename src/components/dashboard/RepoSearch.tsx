@@ -9,14 +9,30 @@ interface RepoSearchProps {
 
 export default function RepoSearch({ value, onChange }: RepoSearchProps) {
     return (
-        <div className="relative w-full">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-[#64748B]" />
+        <div style={{ position: 'relative', width: '100%' }}>
+            <Search
+                size={16}
+                color="#64748B"
+                style={{ position: 'absolute', left: 16, top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }}
+            />
             <input
                 type="text"
                 value={value}
                 onChange={(e) => onChange(e.target.value)}
                 placeholder="Search repositories..."
-                className="search-input w-full pl-12 pr-4 py-3 h-12 rounded-2xl bg-[#111118] border border-[#1E1E2E] text-[#F1F5F9] placeholder-[#64748B] outline-none transition-all"
+                style={{
+                    width: '100%',
+                    paddingLeft: 44,
+                    paddingRight: 16,
+                    paddingTop: 12,
+                    paddingBottom: 12,
+                    background: '#0D0D1A',
+                    border: '1px solid #1E1E2E',
+                    borderRadius: 12,
+                    color: '#F1F5F9',
+                    fontSize: 14,
+                    outline: 'none',
+                }}
             />
         </div>
     )

@@ -1,14 +1,7 @@
 'use client'
 
 import Link from 'next/link'
-import {
-    AlertTriangle,
-    ChevronRight,
-    DatabaseBackup,
-    FolderGit2,
-    RefreshCw,
-    Zap,
-} from 'lucide-react'
+import { AlertTriangle, ChevronRight, DatabaseBackup, FolderGit2, RefreshCw, Zap } from 'lucide-react'
 import { useCallback, useRef } from 'react'
 
 export type RepoStatus = 'ready' | 'indexing' | 'not_indexed' | 'failed'
@@ -28,188 +21,189 @@ export interface RepoCardProps {
 
 const LANGUAGE_COLORS: Record<string, string> = {
     TypeScript: '#60A5FA',
-    Python: '#FACC15',
-    Markdown: '#94A3B8',
-    Fortran: '#FB923C',
-    Go: '#06B6D4',
+    Python:     '#FACC15',
+    Markdown:   '#94A3B8',
+    Fortran:    '#FB923C',
+    Go:         '#06B6D4',
 }
 
 function StatusBadge({ status }: { status: RepoStatus }) {
-    if (status === 'ready') {
-        return (
-            <span className="rounded-xl border border-[#10B981]/20 bg-[#10B981]/10 px-2 py-1 text-[11px] font-bold uppercase tracking-wider text-[#10B981]">
-                Ready
-            </span>
-        )
+    const base: React.CSSProperties = {
+        borderRadius: 8, padding: '3px 8px',
+        fontSize: 10, fontWeight: 700,
+        letterSpacing: '0.06em', textTransform: 'uppercase',
     }
-    if (status === 'indexing') {
-        return (
-            <span className="status-badge-indexing rounded-xl border border-amber-500/20 bg-amber-500/10 px-2 py-1 text-[11px] font-bold uppercase tracking-wider text-amber-500">
-                Indexing...
-            </span>
-        )
-    }
-    if (status === 'failed') {
-        return (
-            <span className="rounded-xl border border-red-500/20 bg-red-500/10 px-2 py-1 text-[11px] font-bold uppercase tracking-wider text-red-500">
-                Failed
-            </span>
-        )
-    }
+    if (status === 'ready') return (
+        <span style={{ ...base, border: '1px solid rgba(16,185,129,0.25)', background: 'rgba(16,185,129,0.1)', color: '#10B981' }}>Ready</span>
+    )
+    if (status === 'indexing') return (
+        <span style={{ ...base, border: '1px solid rgba(245,158,11,0.25)', background: 'rgba(245,158,11,0.1)', color: '#F59E0B' }}>Indexing...</span>
+    )
+    if (status === 'failed') return (
+        <span style={{ ...base, border: '1px solid rgba(239,68,68,0.25)', background: 'rgba(239,68,68,0.1)', color: '#EF4444' }}>Failed</span>
+    )
     return (
-        <span className="rounded-xl border border-[#2D2D3F] bg-[#1E1E2E] px-2 py-1 text-[11px] font-bold uppercase tracking-wider text-[#64748B]">
-            Not indexed
-        </span>
+        <span style={{ ...base, border: '1px solid #2D2D3F', background: '#1A1A2E', color: '#64748B' }}>Not Indexed</span>
     )
 }
 
 function IconBox({ status }: { status: RepoStatus }) {
-    const base = 'flex h-10 w-10 shrink-0 items-center justify-center rounded-lg'
-    if (status === 'ready') {
-        return (
-            <div className={`${base} bg-[#6366F1]/10`}>
-                <FolderGit2 className="h-6 w-6 text-[#6366F1]" />
-            </div>
-        )
+    const box: React.CSSProperties = {
+        width: 40, height: 40, borderRadius: 10,
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        flexShrink: 0,
     }
-    if (status === 'indexing') {
-        return (
-            <div className={`${base} bg-amber-500/10`}>
-                <RefreshCw className="h-6 w-6 animate-spin text-amber-500" style={{ animationDuration: '3s' }} />
-            </div>
-        )
-    }
-    if (status === 'failed') {
-        return (
-            <div className={`${base} bg-red-900/10`}>
-                <AlertTriangle className="h-6 w-6 text-red-500" />
-            </div>
-        )
-    }
+    if (status === 'ready') return (
+        <div style={{ ...box, background: 'rgba(99,102,241,0.15)' }}>
+            <FolderGit2 size={20} color="#6366F1" />
+        </div>
+    )
+    if (status === 'indexing') return (
+        <div style={{ ...box, background: 'rgba(245,158,11,0.15)' }}>
+            <RefreshCw size={20} color="#F59E0B" style={{ animation: 'spin 3s linear infinite' }} />
+        </div>
+    )
+    if (status === 'failed') return (
+        <div style={{ ...box, background: 'rgba(239,68,68,0.1)' }}>
+            <AlertTriangle size={20} color="#EF4444" />
+        </div>
+    )
     return (
-        <div className={`${base} bg-[#1E1E2E]`}>
-            <DatabaseBackup className="h-6 w-6 text-[#64748B]" />
+        <div style={{ ...box, background: '#1A1A2E' }}>
+            <DatabaseBackup size={20} color="#64748B" />
         </div>
     )
 }
 
 export default function RepoCard({
-    title,
-    description,
-    language,
-    languageColor,
-    status,
-    indexingProgress = 65,
+    title, description, language, languageColor,
+    status, indexingProgress = 65,
     indexingDetail = 'Analyzing files...',
-    actionLabel,
-    actionUrl = '#',
-    repoId,
+    actionLabel, actionUrl = '#', repoId,
 }: RepoCardProps) {
     const cardRef = useRef<HTMLDivElement>(null)
     const dotColor = languageColor ?? (language ? LANGUAGE_COLORS[language] : undefined) ?? '#64748B'
+    const href = actionUrl || (repoId ? `/repo/${repoId}` : '#')
 
-    const glassClass =
-        status === 'not_indexed'
-            ? 'glass-card border-dashed !bg-transparent'
-            : status === 'failed'
-                ? 'glass-card !border-red-900/50'
-                : 'glass-card'
+    const borderColor = status === 'failed'
+        ? 'rgba(239,68,68,0.3)'
+        : status === 'not_indexed'
+        ? '#1E1E2E'
+        : '#1E1E2E'
+
+    const cardStyle: React.CSSProperties = {
+        background: 'rgba(10, 10, 20, 0.75)',
+        border: `1px ${status === 'not_indexed' ? 'dashed' : 'solid'} ${borderColor}`,
+        borderRadius: 14,
+        padding: '20px',
+        display: 'flex',
+        flexDirection: 'column',
+        backdropFilter: 'blur(12px)',
+        transition: 'border-color 0.2s ease, box-shadow 0.2s ease, transform 0.15s ease',
+        cursor: 'pointer',
+        minHeight: '200px',
+    }
 
     const onMouseMove = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
         const card = cardRef.current
         if (!card) return
         const rect = card.getBoundingClientRect()
-        const x = e.clientX - rect.left
-        const y = e.clientY - rect.top
-        card.style.setProperty('--mouse-x', `${(x / rect.width) * 100}%`)
-        card.style.setProperty('--mouse-y', `${(y / rect.height) * 100}%`)
-
         const xc = rect.width / 2
         const yc = rect.height / 2
-        const dx = x - xc
-        const dy = y - yc
-        if (window.matchMedia('(min-width: 768px)').matches) {
-            card.style.transform = `perspective(1000px) rotateX(${-dy / 25}deg) rotateY(${dx / 25}deg) translateY(-4px) scale(1.02)`
-        }
+        const dx = e.clientX - rect.left - xc
+        const dy = e.clientY - rect.top - yc
+        card.style.transform = `perspective(1000px) rotateX(${-dy / 30}deg) rotateY(${dx / 30}deg) translateY(-3px) scale(1.01)`
+        card.style.borderColor = '#6366F1'
+        card.style.boxShadow = '0 0 24px rgba(99,102,241,0.15)'
     }, [])
 
     const onMouseLeave = useCallback(() => {
         const card = cardRef.current
         if (!card) return
         card.style.transform = ''
-    }, [])
-
-    const href = actionUrl || (repoId ? `/repo/${repoId}` : '#')
+        card.style.borderColor = borderColor
+        card.style.boxShadow = ''
+    }, [borderColor])
 
     return (
-        <div
-            ref={cardRef}
-            className={`${glassClass} flex w-full flex-col rounded-xl p-5`}
-            onMouseMove={onMouseMove}
-            onMouseLeave={onMouseLeave}
-        >
-            <div className="mb-4 flex items-start justify-between">
+        <div ref={cardRef} style={cardStyle} onMouseMove={onMouseMove} onMouseLeave={onMouseLeave}>
+
+            {/* Top row — icon + badge */}
+            <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 16 }}>
                 <IconBox status={status} />
                 <StatusBadge status={status} />
             </div>
 
-            <h3 className="mb-1 text-base font-semibold tracking-tight text-[#F8FAFC]">{title}</h3>
-            <p className="mb-3 line-clamp-2 flex-grow text-sm leading-5 text-[#94A3B8]">{description}</p>
+            {/* Title */}
+            <h3 style={{ fontSize: 15, fontWeight: 600, color: '#F8FAFC', marginBottom: 6, letterSpacing: '-0.01em' }}>
+                {title}
+            </h3>
 
+            {/* Description */}
+            <p style={{ fontSize: 13, color: '#94A3B8', lineHeight: 1.5, flexGrow: 1, marginBottom: 16,
+                overflow: 'hidden', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' }}>
+                {description}
+            </p>
+
+            {/* Indexing progress */}
             {status === 'indexing' && (
-                <div className="mt-auto">
-                    <div className="mb-2 h-1.5 w-full overflow-hidden rounded-full bg-[#1E1E2E]">
-                        <div
-                            className="h-full rounded-full bg-gradient-to-r from-[#F59E0B] to-[#FDE68A]"
-                            style={{ width: `${indexingProgress}%` }}
-                        />
+                <div style={{ marginTop: 'auto' }}>
+                    <div style={{ height: 5, background: '#1E1E2E', borderRadius: 99, overflow: 'hidden', marginBottom: 8 }}>
+                        <div style={{
+                            height: '100%', borderRadius: 99,
+                            background: 'linear-gradient(90deg, #F59E0B, #FDE68A)',
+                            width: `${indexingProgress}%`,
+                        }} />
                     </div>
-                    <div className="flex items-center justify-between">
-                        <span className="text-[11px] text-[#64748B]">{indexingDetail}</span>
-                        <span className="text-[11px] font-bold text-[#F59E0B]">{indexingProgress}%</span>
+                    <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                        <span style={{ fontSize: 11, color: '#64748B' }}>{indexingDetail}</span>
+                        <span style={{ fontSize: 11, fontWeight: 700, color: '#F59E0B' }}>{indexingProgress}%</span>
                     </div>
                 </div>
             )}
 
+            {/* Footer — language + action */}
             {status !== 'indexing' && (
-                <div className="mt-auto flex items-center gap-4">
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginTop: 'auto' }}>
                     {language && (
-                        <span className="flex items-center gap-1.5 text-xs text-[#64748B]">
-                            <span
-                                className="h-2 w-2 rounded-full"
-                                style={{ backgroundColor: dotColor }}
-                            />
+                        <span style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, color: '#64748B' }}>
+                            <span style={{ width: 8, height: 8, borderRadius: '50%', background: dotColor, flexShrink: 0 }} />
                             {language}
                         </span>
                     )}
 
                     {actionLabel === 'Open' && (
-                        <Link
-                            href={href}
-                            className="ml-auto inline-flex items-center gap-2 rounded-lg bg-[#10B981] px-4 py-2 text-xs font-bold text-white no-underline transition-colors hover:bg-[#059669]"
-                        >
-                            Open
-                            <ChevronRight className="h-3.5 w-3.5" />
+                        <Link href={href} style={{
+                            marginLeft: 'auto', display: 'inline-flex', alignItems: 'center', gap: 6,
+                            padding: '7px 14px', borderRadius: 8,
+                            background: '#10B981', color: 'white',
+                            fontSize: 12, fontWeight: 700, textDecoration: 'none',
+                        }}>
+                            Open <ChevronRight size={13} />
                         </Link>
                     )}
 
                     {actionLabel === 'Index Repo' && (
-                        <Link
-                            href={href}
-                            className="ml-auto inline-flex items-center gap-2 rounded-lg border border-[#6366F1]/30 bg-[#6366F1]/10 px-4 py-2 text-xs font-bold text-[#6366F1] no-underline transition-colors hover:bg-[#6366F1]/20"
-                        >
-                            Index Repo
-                            <Zap className="h-3.5 w-3.5" />
+                        <Link href={href} style={{
+                            marginLeft: 'auto', display: 'inline-flex', alignItems: 'center', gap: 6,
+                            padding: '7px 14px', borderRadius: 8,
+                            border: '1px solid rgba(99,102,241,0.35)',
+                            background: 'rgba(99,102,241,0.1)', color: '#818CF8',
+                            fontSize: 12, fontWeight: 700, textDecoration: 'none',
+                        }}>
+                            Index Repo <Zap size={13} />
                         </Link>
                     )}
 
                     {actionLabel === 'Retry' && (
-                        <button
-                            type="button"
-                            className="ml-auto inline-flex items-center gap-2 rounded-xl border border-red-500/50 h-10 px-5 text-sm font-bold text-red-500 transition-colors hover:bg-red-500/10"
-                        >
-                            Retry
-                            <RefreshCw className="h-3.5 w-3.5" />
+                        <button type="button" style={{
+                            marginLeft: 'auto', display: 'inline-flex', alignItems: 'center', gap: 6,
+                            padding: '7px 14px', borderRadius: 8,
+                            border: '1px solid rgba(239,68,68,0.4)',
+                            background: 'transparent', color: '#EF4444',
+                            fontSize: 12, fontWeight: 700, cursor: 'pointer',
+                        }}>
+                            Retry <RefreshCw size={13} />
                         </button>
                     )}
                 </div>
