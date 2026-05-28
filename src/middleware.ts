@@ -8,6 +8,10 @@ export default auth((req) => {
     //Publuc routes: always accesible
     const publicRoutes = ['/', '/auth/login', '/auth/error']
     if(publicRoutes.includes(pathname)){
+        //If logged in and trying to visit landing page, send to dashboard
+        if(isLoggedIn && pathname === '/') {
+            return NextResponse.redirect(new URL('/dashboard', req.url))
+        }
         return NextResponse.next()
     } 
 

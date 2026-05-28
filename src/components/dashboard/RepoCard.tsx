@@ -17,14 +17,15 @@ export interface RepoCardProps {
     actionLabel?: 'Open' | 'Index Repo' | 'Retry'
     actionUrl?: string
     repoId?: string
+    onIndexClick?: () => void
 }
 
 const LANGUAGE_COLORS: Record<string, string> = {
     TypeScript: '#60A5FA',
-    Python:     '#FACC15',
-    Markdown:   '#94A3B8',
-    Fortran:    '#FB923C',
-    Go:         '#06B6D4',
+    Python: '#FACC15',
+    Markdown: '#94A3B8',
+    Fortran: '#FB923C',
+    Go: '#06B6D4',
 }
 
 function StatusBadge({ status }: { status: RepoStatus }) {
@@ -79,7 +80,7 @@ export default function RepoCard({
     title, description, language, languageColor,
     status, indexingProgress = 65,
     indexingDetail = 'Analyzing files...',
-    actionLabel, actionUrl = '#', repoId,
+    actionLabel, actionUrl = '', repoId, onIndexClick,
 }: RepoCardProps) {
     const cardRef = useRef<HTMLDivElement>(null)
     const dotColor = languageColor ?? (language ? LANGUAGE_COLORS[language] : undefined) ?? '#64748B'
@@ -88,8 +89,8 @@ export default function RepoCard({
     const borderColor = status === 'failed'
         ? 'rgba(239,68,68,0.3)'
         : status === 'not_indexed'
-        ? '#1E1E2E'
-        : '#1E1E2E'
+            ? '#1E1E2E'
+            : '#1E1E2E'
 
     const cardStyle: React.CSSProperties = {
         background: 'rgba(10, 10, 20, 0.75)',
@@ -140,8 +141,10 @@ export default function RepoCard({
             </h3>
 
             {/* Description */}
-            <p style={{ fontSize: 13, color: '#94A3B8', lineHeight: 1.5, flexGrow: 1, marginBottom: 16,
-                overflow: 'hidden', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' }}>
+            <p style={{
+                fontSize: 13, color: '#94A3B8', lineHeight: 1.5, flexGrow: 1, marginBottom: 16,
+                overflow: 'hidden', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical'
+            }}>
                 {description}
             </p>
 
@@ -184,19 +187,24 @@ export default function RepoCard({
                     )}
 
                     {actionLabel === 'Index Repo' && (
-                        <Link href={href} style={{
-                            marginLeft: 'auto', display: 'inline-flex', alignItems: 'center', gap: 6,
-                            padding: '7px 14px', borderRadius: 8,
-                            border: '1px solid rgba(99,102,241,0.35)',
-                            background: 'rgba(99,102,241,0.1)', color: '#818CF8',
-                            fontSize: 12, fontWeight: 700, textDecoration: 'none',
-                        }}>
+                        <button
+                            type="button"
+                            onClick={onIndexClick}
+                            style={{
+                                marginLeft: 'auto', display: 'inline-flex',
+                                alignItems: 'center', gap: 6,
+                                padding: '7px 14px', borderRadius: 8,
+                                border: '1px solid rgba(99,102,241,0.35)',
+                                background: 'rgba(99,102,241,0.1)', color: '#818CF8',
+                                fontSize: 12, fontWeight: 700, cursor: 'pointer',
+                            }}
+                        >
                             Index Repo <Zap size={13} />
-                        </Link>
+                        </button>
                     )}
 
                     {actionLabel === 'Retry' && (
-                        <button type="button" style={{
+                        <button type="button" onClick={onIndexClick} style={{
                             marginLeft: 'auto', display: 'inline-flex', alignItems: 'center', gap: 6,
                             padding: '7px 14px', borderRadius: 8,
                             border: '1px solid rgba(239,68,68,0.4)',

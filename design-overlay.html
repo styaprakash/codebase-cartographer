@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Indexing Progress | Codebase Cartographer</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://code.iconify.design/iconify-icon/1.0.7/iconify-icon.min.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #0A0A0F;
+            color: #F1F5F9;
+            overflow: hidden;
+        }
+
+        .code-snippet-bg {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 0;
+            overflow: hidden;
+            opacity: 0.1;
+            filter: blur(4px);
+            pointer-events: none;
+        }
+
+        .scrolling-code {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 14px;
+            line-height: 1.6;
+            white-space: pre;
+            color: #6366F1;
+            animation: scrollCode 60s linear infinite;
+        }
+
+        @keyframes scrollCode {
+            0% { transform: translateY(0); }
+            100% { transform: translateY(-50%); }
+        }
+
+        .glass-container {
+            background: rgba(17, 17, 24, 0.8);
+            backdrop-filter: blur(20px);
+            border: 1px solid #1E1E2E;
+            box-shadow: 0 0 40px rgba(0, 0, 0, 0.5);
+        }
+
+        .progress-bar-fill {
+            width: 58%; /* Static example */
+            height: 100%;
+            background: linear-gradient(90deg, #6366F1 0%, #06B6D4 100%);
+            border-radius: 9999px;
+            position: relative;
+            animation: progressPulse 2s ease-in-out infinite;
+        }
+
+        @keyframes progressPulse {
+            0%, 100% { opacity: 0.8; }
+            50% { opacity: 1; }
+        }
+
+        .progress-glow {
+            position: absolute;
+            right: 0;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 40px;
+            height: 40px;
+            background: #06B6D4;
+            filter: blur(20px);
+            opacity: 0.6;
+        }
+
+        .status-text-animation::after {
+            content: '';
+            animation: dotCycle 2s steps(4, end) infinite;
+        }
+
+        @keyframes dotCycle {
+            0%, 20% { content: ''; }
+            40% { content: '.'; }
+            60% { content: '..'; }
+            80% { content: '...'; }
+        }
+
+        /* Custom scrollbar for error boxes */
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 6px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: #0D0D14;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #1E1E2E;
+            border-radius: 3px;
+        }
+    </style>
+</head>
+<body>
+    <div class="min-h-screen flex items-center justify-center relative">
+        
+        <!-- Decorative Background Layer -->
+        <div class="code-snippet-bg">
+            <div class="scrolling-code">
+function resolveDependencies(module) {
+    const deps = module.getImports();
+    return deps.map(d => {
+        const resolved = AST.findSource(d);
+        console.log(`Mapping ${d} -> ${resolved.path}`);
+        return {
+            source: module.id,
+            target: resolved.id,
+            strength: analyzeCoupling(module, resolved)
+        };
+    });
+}
+
+async function generateGraph(root) {
+    const nodes = await indexer.crawl(root);
+    const edges = nodes.flatMap(n => resolveDependencies(n));
+    return { nodes, edges };
+}
+
+class CodeParser {
+    constructor(repo) {
+        this.repo = repo;
+        this.ast = new TreeSitter();
+    }
+    
+    async parseFile(path) {
+        const content = await fs.readFile(path);
+        return this.ast.parse(content);
+    }
+}
+
+/* Duplicate for infinite loop feel */
+function resolveDependencies(module) {
+    const deps = module.getImports();
+    return deps.map(d => {
+        const resolved = AST.findSource(d);
+        console.log(`Mapping ${d} -> ${resolved.path}`);
+        return {
+            source: module.id,
+            target: resolved.id,
+            strength: analyzeCoupling(module, resolved)
+        };
+    });
+}
+            </div>
+        </div>
+
+        <!-- Main Indexing Container -->
+        <div class="z-10 w-full max-w-2xl px-6">
+            
+            <!-- Success / In Progress View -->
+            <div id="view-processing" class="">
+                <div class="flex flex-col items-center">
+                    <!-- Repo Header -->
+                    <div class="flex items-center gap-2 mb-10">
+                        <iconify-icon icon="lucide:github" class="text-2xl text-white"></iconify-icon>
+                        <span class="text-xl font-bold tracking-tight text-[#F1F5F9]">vercel/turbo</span>
+                        <a href="#" id="external-github-link" class="text-[#64748B] hover:text-[#06B6D4] transition-colors">
+                            <iconify-icon icon="lucide:external-link" class="text-sm"></iconify-icon>
+                        </a>
+                    </div>
+
+                    <!-- Status Card -->
+                    <div class="glass-container w-full p-10 rounded-3xl">
+                        <div class="mb-8">
+                            <div class="flex justify-between items-end mb-4">
+                                <div class="flex flex-col">
+                                    <span class="text-[#64748B] text-xs font-semibold uppercase tracking-widest mb-1">Current Phase</span>
+                                    <h2 class="text-xl font-medium text-[#F1F5F9] status-text-animation">
+                                        Generating embeddings for 1,432 functions
+                                    </h2>
+                                </div>
+                                <span class="text-sm font-mono text-[#06B6D4] font-medium">58%</span>
+                            </div>
+                            
+                            <!-- Animated Progress Bar -->
+                            <div class="w-full h-3 bg-[#1E1E2E] rounded-full overflow-hidden relative">
+                                <div class="progress-bar-fill w-[58%]">
+                                    <div class="progress-glow"></div>
+                                </div>
+                            </div>
+
+                            <div class="mt-4 flex justify-between items-center">
+                                <span class="text-xs text-[#64748B]">143 / 247 files processed</span>
+                                <div class="flex items-center gap-2">
+                                    <div class="w-1.5 h-1.5 rounded-full bg-[#06B6D4] animate-pulse"></div>
+                                    <span class="text-[10px] text-[#06B6D4] font-medium uppercase tracking-tighter">AI Mapping Active</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="border-t border-[#1E1E2E] pt-6 flex flex-col gap-2">
+                            <div class="flex items-center gap-3 text-sm text-[#64748B]">
+                                <iconify-icon icon="lucide:check-circle-2" class="text-[#10B981]"></iconify-icon>
+                                <span>Fetched file tree</span>
+                            </div>
+                            <div class="flex items-center gap-3 text-sm text-[#64748B]">
+                                <iconify-icon icon="lucide:check-circle-2" class="text-[#10B981]"></iconify-icon>
+                                <span>Parsed 247 files with AST</span>
+                            </div>
+                            <div class="flex items-center gap-3 text-sm text-[#F1F5F9]">
+                                <iconify-icon icon="lucide:loader-2" class="text-[#6366F1] animate-spin"></iconify-icon>
+                                <span>Processing module relationships...</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <p class="mt-8 text-sm text-[#64748B]">
+                        This usually takes 1-2 minutes for a medium-sized repo
+                    </p>
+                    
+                    <!-- Dev Toggle (for preview purposes only) -->
+                    <button onclick="document.getElementById('view-processing').classList.add('hidden'); document.getElementById('view-failed').classList.remove('hidden');" class="mt-12 text-[10px] text-[#1E1E2E] hover:text-[#64748B] transition-colors">
+                        Simulate Failure
+                    </button>
+                </div>
+            </div>
+
+            <!-- Failed View (Hidden by default) -->
+            <div id="view-failed" class="hidden">
+                <div class="flex flex-col items-center">
+                    <div class="w-20 h-20 rounded-full bg-red-500/10 flex items-center justify-center mb-6 border border-red-500/20">
+                        <iconify-icon icon="lucide:alert-triangle" class="text-4xl text-[#EF4444]"></iconify-icon>
+                    </div>
+
+                    <h2 class="text-3xl font-bold text-[#F1F5F9] mb-2">Indexing failed</h2>
+                    <p class="text-[#64748B] mb-8">We encountered a problem while mapping the repository.</p>
+
+                    <div class="glass-container w-full rounded-2xl p-6 mb-8">
+                        <div class="flex flex-col gap-4">
+                            <!-- Error Code Box -->
+                            <div class="bg-[#0D0D14] border-l-2 border-[#EF4444] p-4 rounded-r-lg">
+                                <p class="font-mono text-sm text-[#EF4444] mb-2 font-semibold">AUTH_PERMISSION_DENIED</p>
+                                <p class="text-sm text-[#64748B] leading-relaxed">
+                                    We couldn't access this repository. This usually happens with private repos that haven't granted the right permissions to Codebase Cartographer.
+                                </p>
+                            </div>
+
+                            <!-- Tip Box -->
+                            <div class="bg-[#111118] border border-[#1E1E2E] p-4 rounded-xl flex gap-3 items-start">
+                                <iconify-icon icon="lucide:lightbulb" class="text-lg text-[#F59E0B] mt-0.5"></iconify-icon>
+                                <div class="flex flex-col">
+                                    <p class="text-sm text-[#F1F5F9] font-medium mb-1">Quick Tip</p>
+                                    <p class="text-xs text-[#64748B] leading-relaxed">
+                                        Update repository access permissions in your <a href="https://github.com/settings/applications" id="github-settings-link" class="text-[#06B6D4] hover:underline underline-offset-4">GitHub application settings</a>.
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="flex items-center gap-4 w-full">
+                        <a href="#" id="retry-btn" class="flex-1 h-12 flex items-center justify-center bg-[#6366F1] hover:bg-[#4F46E5] text-white font-semibold rounded-xl transition-all">
+                            Retry Indexing
+                            <iconify-icon icon="lucide:arrow-right" class="ml-2"></iconify-icon>
+                        </a>
+                        <a href="https://draft-27810115-ea71-408f-98fb-2d490e18f046.preview.superdesign.dev" id="back-dashboard-btn" class="flex-1 h-12 flex items-center justify-center border border-[#1E1E2E] hover:bg-[#111118] text-[#F1F5F9] font-medium rounded-xl transition-all">
+                            Back to Dashboard
+                        </a>
+                    </div>
+
+                    <p class="mt-8 text-xs text-[#64748B] text-center max-w-sm">
+                        Still failing? Try re-connecting your GitHub account in <a href="https://draft-82614752-a992-4987-b0f1-25f88b2fc714.preview.superdesign.dev" id="failed-settings-link" class="text-[#64748B] hover:text-[#F1F5F9] underline">Settings</a> or contact support.
+                    </p>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</body>
+</html>

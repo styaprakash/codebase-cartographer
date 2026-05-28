@@ -60,7 +60,7 @@ export const repoApi = {
 export const querApi = {
     ask: (repoId: string, question: string) => api.post(`/api/repos/${repoId}/query`, {question}),
     getHistory: (repoId: string) => {
-        api.get(`/api/repos/${repoId}/queries`)
+        return api.get(`/api/repos/${repoId}/queries`)
     }
 }
 

@@ -36,8 +36,48 @@ export default function DashboardNav() {
         return () => document.removeEventListener('mousedown', handleClickOutside);
     }, []);
 
+    const SCROLL_THRESHOLD = 20;
+    const MOUSE_REVEAL_ZONE = 80;
+
+    const lastScrollY = useRef(0);
+    const [navVisible, setNavVisible] = useState(true);
+    const [mouseNearTop, setMouseNearTop] = useState(false);
+
+    useEffect(() => {
+        const handleScroll = () => {
+            const currentY = window.scrollY;
+            const delta = currentY - lastScrollY.current;
+
+            if (currentY <= 0) {
+                setNavVisible(true);
+            } else if (Math.abs(delta) > SCROLL_THRESHOLD) {
+                if (delta > 0) {
+                    setNavVisible(false);
+                } else {
+                    setNavVisible(true);
+                }
+            }
+
+            lastScrollY.current = currentY;
+        };
+
+        window.addEventListener("scroll", handleScroll, { passive: true });
+        return () => window.removeEventListener("scroll", handleScroll);
+    }, []);
+
+    useEffect(() => {
+        const handleMouseMove = (e: MouseEvent) => {
+            setMouseNearTop(e.clientY <= MOUSE_REVEAL_ZONE);
+        };
+
+        window.addEventListener("mousemove", handleMouseMove);
+        return () => window.removeEventListener("mousemove", handleMouseMove);
+    }, []);
+
+    const isVisible = navVisible || mouseNearTop;
+
     return (
-        <nav className="fixed top-0 w-full z-50 bg-[#0A0A0F]/80 backdrop-blur-xl border-b border-[#1E1E2E]">
+        <nav style={{ transform: isVisible ? "translateY(0)" : "translateY(-100%)", transition: "transform 0.4s ease" }} className="fixed top-0 w-full z-50 bg-[#0A0A0F]/80 backdrop-blur-xl border-b border-[#1E1E2E]">
             <div
                 style={{
                     marginLeft: "1.5rem",

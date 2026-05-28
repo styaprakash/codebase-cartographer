@@ -41,6 +41,7 @@ export const { handlers, signIn, signOut, auth} = NextAuth({
                 const userData = user as any
                 userData.backendToken = data.token
                 userData.userId = data.user.id
+                userData.access_token = account?.access_token
 
                 return true; //allow login
             } catch(error){
@@ -59,6 +60,7 @@ export const { handlers, signIn, signOut, auth} = NextAuth({
                 const userData = user as any
                 token.backendToken = userData.backendToken
                 token.userId = userData.userId
+                token.githubAccessToken = userData?.access_token
 
                 token.name = user.name
                 token.email = user.email
@@ -72,6 +74,7 @@ export const { handlers, signIn, signOut, auth} = NextAuth({
         async session({ session, token }){
             //custom backend JWt
             ;(session as any).backendToken = token.backendToken;
+            ;(session as any).githubAccessToken = token.githubAccessToken
 
             session.user.id = token.userId as string
             session.user.name  = token.name  as string
