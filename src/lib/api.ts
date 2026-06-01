@@ -52,7 +52,7 @@ export const userApi = {
 export const repoApi = {
     getAll: () => api.get('/api/repos'),
     getById: (id: string) => api.get(`/api/repos/${id}`),
-    create: (data: any) => api.get('/api/repos', data),
+    create: (data: any) => api.post('/api/repos', data),
     triggerIndex: (id: string) => api.post(`/api/repos/${id}/index`),
     getStatus: (id: string) => api.get(`/api/repos/${id}/status`)
 }

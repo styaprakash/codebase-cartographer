@@ -339,6 +339,12 @@ body {
     box-shadow: 0 0 15px rgba(99, 102, 241, 0.2);
 }
 
+/* ── Revolving border beam ─────────────────────────────────────────────────── */
+@keyframes revolve-border {
+    from { transform: rotate(0deg); }
+    to   { transform: rotate(360deg); }
+}
+
 .star-bg {
     position: fixed;
     inset: 0;

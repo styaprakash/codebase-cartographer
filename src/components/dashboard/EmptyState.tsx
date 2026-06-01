@@ -14,7 +14,6 @@ export default function EmptyState() {
                 justifyContent: 'center',
                 textAlign: 'center',
                 padding: '2rem 1.5rem',
-                backgroundColor: '#050510',
                 position: 'relative',
                 overflow: 'hidden',
             }}
@@ -39,42 +38,66 @@ export default function EmptyState() {
                     }}
                 />
 
-                {/* Icon Container */}
+                {/* Icon Container — revolving border beam */}
                 <div
                     style={{
                         position: 'relative',
-                        width: '9rem',
-                        height: '9rem',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        overflow: 'hidden',
                         borderRadius: '1.25rem',
-                        border: '1px solid #1E1E2E',
-                        background: 'rgba(17,17,24,0.5)',
-                        backdropFilter: 'blur(12px)',
+                        padding: '1px',
+                        overflow: 'hidden',
                     }}
                 >
-                    {/* Grid Pattern */}
+                    {/* Rotating beam */}
                     <div
                         style={{
                             position: 'absolute',
-                            inset: 0,
-                            opacity: 0.2,
-                            backgroundImage:
-                                'radial-gradient(#1E1E2E 1px, transparent 1px)',
-                            backgroundSize: '16px 16px',
+                            top: '-50%',
+                            left: '-50%',
+                            width: '200%',
+                            height: '200%',
+                            background:
+                                'conic-gradient(from 0deg, transparent 0%, transparent 65%, rgba(255,255,255,0.15) 72%, rgba(255,255,255,0.9) 78%, #ffffff 80%, rgba(255,255,255,0.9) 82%, rgba(255,255,255,0.15) 88%, transparent 95%, transparent 100%)',
+                            animation: 'revolve-border 4s linear infinite',
                         }}
                     />
 
-                    <MapPin
+                    {/* Inner content */}
+                    <div
                         style={{
                             position: 'relative',
-                            width: '3.2rem',
-                            height: '3.2rem',
-                            color: '#7C3AED',
+                            zIndex: 1,
+                            width: '9rem',
+                            height: '9rem',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            overflow: 'hidden',
+                            borderRadius: 'calc(1.25rem - 1px)',
+                            background: 'rgba(17,17,24,0.85)',
+                            backdropFilter: 'blur(12px)',
                         }}
-                    />
+                    >
+                        {/* Grid Pattern */}
+                        <div
+                            style={{
+                                position: 'absolute',
+                                inset: 0,
+                                opacity: 0.2,
+                                backgroundImage:
+                                    'radial-gradient(#1E1E2E 1px, transparent 1px)',
+                                backgroundSize: '16px 16px',
+                            }}
+                        />
+
+                        <MapPin
+                            style={{
+                                position: 'relative',
+                                width: '3.2rem',
+                                height: '3.2rem',
+                                color: '#7C3AED',
+                            }}
+                        />
+                    </div>
                 </div>
             </div>
 

@@ -48,6 +48,7 @@ export default function DashboardContent() {
     const handleIndexRepo = useCallback(async (repo: DashboardRepo) => {
         try {
             const session = await getSession()
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             const token = (session as any)?.backendToken
 
             // Repo already exists in backend — branch on its status
@@ -60,10 +61,15 @@ export default function DashboardContent() {
                     router.push(`/repo/${repo.backendId}`)
                     return
                 }
-                // FAILED — retry index
+                // FAILED — retry index with current GitHub metadata (handles renames)
                 await axios.post(
                     `${process.env.NEXT_PUBLIC_API_URL}/api/repos/${repo.backendId}/index`,
-                    {},
+                    {
+                        name: repo.name,
+                        fullName: repo.fullName,
+                        branch: repo.branch,
+                        language: repo.language,
+                    },
                     { headers: { Authorization: `Bearer ${token}` } }
                 )
                 router.push(`/indexing/${repo.backendId}`)

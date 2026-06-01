@@ -47,7 +47,7 @@ function mergeRepos(githubRepos: GithubRepo[], backendRepos: BackendRepo[]): Das
     return githubRepos.map((gr) => {
         //find the matching backend repo with the github repo
         const backend = backendRepos.find(
-            (br) => br.githubRepoId === String(gr.id)
+            (br) => String(br.githubRepoId) === String(gr.id)
         )
 
         return{
