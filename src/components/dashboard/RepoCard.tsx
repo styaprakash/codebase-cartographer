@@ -1,10 +1,10 @@
 'use client'
 
 import Link from 'next/link'
-import { AlertTriangle, ChevronRight, DatabaseBackup, FolderGit2, RefreshCw, Zap } from 'lucide-react'
+import { AlertTriangle, ChevronRight, Clock, DatabaseBackup, FolderGit2, RefreshCw, Zap } from 'lucide-react'
 import { useCallback, useRef } from 'react'
 
-export type RepoStatus = 'ready' | 'indexing' | 'not_indexed' | 'failed'
+export type RepoStatus = 'ready' | 'indexing' | 'not_indexed' | 'failed' | 'queued'
 
 export interface RepoCardProps {
     title: string
@@ -14,7 +14,7 @@ export interface RepoCardProps {
     status: RepoStatus
     indexingProgress?: number
     indexingDetail?: string
-    actionLabel?: 'Open' | 'Index Repo' | 'Retry'
+    actionLabel?: 'Open' | 'Index Repo' | 'Retry' | 'Queued' | 'Indexing...'
     actionUrl?: string
     repoId?: string
     onIndexClick?: () => void
@@ -43,6 +43,9 @@ function StatusBadge({ status }: { status: RepoStatus }) {
     if (status === 'failed') return (
         <span style={{ ...base, border: '1px solid rgba(239,68,68,0.25)', background: 'rgba(239,68,68,0.1)', color: '#EF4444' }}>Failed</span>
     )
+    if (status === 'queued') return (
+        <span style={{ ...base, border: '1px solid rgba(161,161,170,0.25)', background: 'rgba(161,161,170,0.1)', color: '#A1A1AA' }}>Queued</span>
+    )
     return (
         <span style={{ ...base, border: '1px solid #2D2D3F', background: '#1A1A2E', color: '#64748B' }}>Not Indexed</span>
     )
@@ -67,6 +70,11 @@ function IconBox({ status }: { status: RepoStatus }) {
     if (status === 'failed') return (
         <div style={{ ...box, background: 'rgba(239,68,68,0.1)' }}>
             <AlertTriangle size={20} color="#EF4444" />
+        </div>
+    )
+    if (status === 'queued') return (
+        <div style={{ ...box, background: 'rgba(161,161,170,0.15)' }}>
+            <Clock size={20} color="#A1A1AA" />
         </div>
     )
     return (
@@ -148,6 +156,13 @@ export default function RepoCard({
                 {description}
             </p>
 
+            {/* Queued helper text */}
+            {status === 'queued' && (
+                <p style={{ fontSize: 12, color: '#A1A1AA', fontStyle: 'italic', marginBottom: 16, marginTop: 0 }}>
+                    Waiting for indexing worker — Job has been queued
+                </p>
+            )}
+
             {/* Indexing progress */}
             {status === 'indexing' && (
                 <div style={{ marginTop: 'auto' }}>
@@ -212,6 +227,18 @@ export default function RepoCard({
                             fontSize: 12, fontWeight: 700, cursor: 'pointer',
                         }}>
                             Retry <RefreshCw size={13} />
+                        </button>
+                    )}
+
+                    {actionLabel === 'Queued' && (
+                        <button type="button" disabled style={{
+                            marginLeft: 'auto', display: 'inline-flex', alignItems: 'center', gap: 6,
+                            padding: '7px 14px', borderRadius: 8,
+                            border: '1px solid rgba(161,161,170,0.3)',
+                            background: 'rgba(161,161,170,0.08)', color: '#A1A1AA',
+                            fontSize: 12, fontWeight: 700, cursor: 'not-allowed', opacity: 0.7,
+                        }}>
+                            Queued <Clock size={13} />
                         </button>
                     )}
                 </div>

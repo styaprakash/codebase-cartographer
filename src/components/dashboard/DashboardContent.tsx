@@ -53,7 +53,7 @@ export default function DashboardContent() {
 
             // Repo already exists in backend — branch on its status
             if (repo.backendId) {
-                if (repo.status === 'INDEXING' || repo.status === 'PENDING') {
+                if (repo.status === 'INDEXING') {
                     router.push(`/indexing/${repo.backendId}`)
                     return
                 }
@@ -252,7 +252,7 @@ function mapStatus(status: DashboardRepo['status']): RepoCardProps['status'] {
     const map = {
         INDEXED:     'ready',
         INDEXING:    'indexing',
-        PENDING:     'indexing',
+        PENDING:     'queued',
         FAILED:      'failed',
         NOT_INDEXED: 'not_indexed',
     } as const
@@ -263,5 +263,6 @@ function getActionLabel(status: DashboardRepo['status']): RepoCardProps['actionL
     if (status === 'INDEXED')     return 'Open'
     if (status === 'FAILED')      return 'Retry'
     if (status === 'NOT_INDEXED') return 'Index Repo'
+    if (status === 'PENDING')     return 'Queued'
     return undefined
 }

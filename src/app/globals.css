@@ -409,3 +409,54 @@ body {
     filter: blur(20px);
     opacity: 0.6;
 }
+
+/* ── Repo Explorer ─────────────────────────────────────────── */
+
+/* Glass panel for explorer */
+.glass-panel {
+  background: rgba(17, 17, 24, 0.7);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid var(--border);
+}
+
+/* Code font utility */
+.code-font {
+  font-family: 'JetBrains Mono', var(--font-geist-mono), monospace;
+}
+
+/* Tab active state */
+.tab-active {
+  color: var(--cyan);
+  border-bottom: 2px solid var(--cyan);
+}
+
+/* Suggestion chip hover */
+.suggestion-chip {
+  transition: all 0.2s ease;
+}
+.suggestion-chip:hover {
+  background: rgba(99, 102, 241, 0.1);
+  border-color: var(--indigo);
+  color: var(--text-primary);
+}
+
+/* Graph node glow on hover */
+.node-glow:hover {
+  box-shadow: 0 0 15px rgba(99, 102, 241, 0.3);
+  border-color: var(--indigo);
+}
+
+/* Flowing edge animation for dependency lines */
+.flowing-line {
+  stroke-dasharray: 10;
+  animation: dash 20s linear infinite;
+}
+@keyframes dash {
+  to { stroke-dashoffset: -1000; }
+}
+
+/* Scrollbar-hide for sidebar */
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}

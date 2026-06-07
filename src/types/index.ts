@@ -43,4 +43,55 @@ export interface DashboardRepo {
     errorMessage: string | null   
 }
 
+// ── File Tree Types ──────────────────────────────────
+export interface FileNode {
+  name: string
+  path: string
+  type: 'file' | 'directory'
+  children?: FileNode[]
+  language?: string       // file extension / detected language
+}
 
+// ── Chat / Query Types ──────────────────────────────
+export interface ChatMessage {
+  id: string
+  role: 'user' | 'assistant'
+  content: string
+  sources?: SourceReference[]
+  timestamp: string
+}
+
+export interface SourceReference {
+  filePath: string
+  label: string
+}
+
+// ── Dependency Graph Types ──────────────────────────
+export type NodeCategory = 'component' | 'service' | 'utility' | 'config'
+
+export interface GraphNode {
+  id: string
+  label: string
+  category: NodeCategory
+  filePath: string
+}
+
+export interface GraphEdge {
+  source: string
+  target: string
+}
+
+export interface DependencyGraph {
+  nodes: GraphNode[]
+  edges: GraphEdge[]
+}
+
+// ── File/Module Details ─────────────────────────────
+export interface ModuleDetails {
+  name: string
+  filePath: string
+  description: string
+  functions: string[]
+  incoming: string[]     // files that import this
+  outgoing: string[]     // files this imports
+}
