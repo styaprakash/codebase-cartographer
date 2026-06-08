@@ -17,6 +17,7 @@ export interface RepoCardProps {
     actionLabel?: 'Open' | 'Index Repo' | 'Retry' | 'Queued' | 'Indexing...'
     actionUrl?: string
     repoId?: string
+    branch?: string
     onIndexClick?: () => void
 }
 
@@ -88,9 +89,10 @@ export default function RepoCard({
     title, description, language, languageColor,
     status, indexingProgress = 65,
     indexingDetail = 'Analyzing files...',
-    actionLabel, actionUrl = '', repoId, onIndexClick,
+    actionLabel, actionUrl = '', repoId, branch, onIndexClick,
 }: RepoCardProps) {
     const cardRef = useRef<HTMLDivElement>(null)
+    const glowRef = useRef<HTMLDivElement>(null)
     const dotColor = languageColor ?? (language ? LANGUAGE_COLORS[language] : undefined) ?? '#64748B'
     const href = actionUrl || (repoId ? `/repo/${repoId}` : '#')
 
@@ -101,29 +103,41 @@ export default function RepoCard({
             : '#1E1E2E'
 
     const cardStyle: React.CSSProperties = {
-        background: 'rgba(10, 10, 20, 0.75)',
+        background: 'rgba(17, 17, 24, 0.6)',
         border: `1px ${status === 'not_indexed' ? 'dashed' : 'solid'} ${borderColor}`,
         borderRadius: 14,
         padding: '20px',
         display: 'flex',
         flexDirection: 'column',
         backdropFilter: 'blur(12px)',
-        transition: 'border-color 0.2s ease, box-shadow 0.2s ease, transform 0.15s ease',
+        transition: 'all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275)',
         cursor: 'pointer',
         minHeight: '200px',
+        position: 'relative',
+        overflow: 'hidden',
     }
 
     const onMouseMove = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
         const card = cardRef.current
         if (!card) return
         const rect = card.getBoundingClientRect()
+        const x = e.clientX - rect.left
+        const y = e.clientY - rect.top
+        
+        card.style.setProperty('--mouse-x', `${(x / rect.width) * 100}%`)
+        card.style.setProperty('--mouse-y', `${(y / rect.height) * 100}%`)
+        
         const xc = rect.width / 2
         const yc = rect.height / 2
-        const dx = e.clientX - rect.left - xc
-        const dy = e.clientY - rect.top - yc
-        card.style.transform = `perspective(1000px) rotateX(${-dy / 30}deg) rotateY(${dx / 30}deg) translateY(-3px) scale(1.01)`
+        const dx = x - xc
+        const dy = y - yc
+        card.style.transform = `perspective(1000px) rotateX(${-dy / 25}deg) rotateY(${dx / 25}deg) translateY(-4px) scale(1.02)`
         card.style.borderColor = '#6366F1'
-        card.style.boxShadow = '0 0 24px rgba(99,102,241,0.15)'
+        card.style.boxShadow = '0 10px 40px -10px rgba(99, 102, 241, 0.4), 0 0 0 1px rgba(99, 102, 241, 0.2)'
+        
+        if (glowRef.current) {
+            glowRef.current.style.opacity = '1'
+        }
     }, [])
 
     const onMouseLeave = useCallback(() => {
@@ -132,20 +146,51 @@ export default function RepoCard({
         card.style.transform = ''
         card.style.borderColor = borderColor
         card.style.boxShadow = ''
+        
+        if (glowRef.current) {
+            glowRef.current.style.opacity = '0'
+        }
     }, [borderColor])
 
     return (
         <div ref={cardRef} style={cardStyle} onMouseMove={onMouseMove} onMouseLeave={onMouseLeave}>
+            
+            <div 
+                ref={glowRef}
+                style={{
+                    position: 'absolute',
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    bottom: 0,
+                    background: 'radial-gradient(circle at var(--mouse-x, 50%) var(--mouse-y, 50%), rgba(99, 102, 241, 0.15) 0%, transparent 80%)',
+                    pointerEvents: 'none',
+                    opacity: 0,
+                    transition: 'opacity 0.3s ease',
+                    zIndex: 0,
+                }} 
+            />
 
-            {/* Top row — icon + badge */}
-            <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 16 }}>
+            <div style={{ position: 'relative', zIndex: 1, display: 'flex', flexDirection: 'column', height: '100%' }}>
+                {/* Top row — icon + badge */}
+                <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 16 }}>
                 <IconBox status={status} />
                 <StatusBadge status={status} />
             </div>
 
             {/* Title */}
-            <h3 style={{ fontSize: 15, fontWeight: 600, color: '#F8FAFC', marginBottom: 6, letterSpacing: '-0.01em' }}>
+            <h3 style={{ fontSize: 15, fontWeight: 600, color: '#F8FAFC', marginBottom: 6, letterSpacing: '-0.01em', display: 'flex', alignItems: 'center', gap: '8px' }}>
                 {title}
+                {branch && status !== 'not_indexed' && (
+                    <span style={{ fontSize: 11, color: '#64748B', fontWeight: 400, display: 'flex', alignItems: 'center', gap: 4 }}>
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#64748B" strokeWidth="2">
+                            <path d="M6 3v12a4 4 0 0 0 4 4h4" />
+                            <path d="M18 17l4-4-4-4" />
+                            <path d="M14 21l4-4-4-4" />
+                        </svg>
+                        {branch}
+                    </span>
+                )}
             </h3>
 
             {/* Description */}
@@ -243,6 +288,7 @@ export default function RepoCard({
                     )}
                 </div>
             )}
+            </div>
         </div>
     )
 }

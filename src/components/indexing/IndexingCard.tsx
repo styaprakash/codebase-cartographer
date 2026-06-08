@@ -1,11 +1,15 @@
 'use client'
 
 import { useEffect, useState } from "react"
-import { useRouter } from "next/navigation"
-import { ExternalLink, AlertTriangle, Lightbulb, ArrowRight } from 'lucide-react'
+import { useRouter, useSearchParams } from "next/navigation"
+import { ExternalLink, AlertTriangle, Lightbulb, ArrowRight, Cpu, GitBranch, Info } from 'lucide-react'
 import axios from "axios"
 import { getSession } from "next-auth/react"
-import PhaseChecklist from "./PhaseChecklist"
+import LiveFileFeed from "./LiveFileFeed"
+import ProgressTimeline, { type TimelinePhase } from "./ProgressTimeline"
+import EducationalTip from "./EducationalTip"
+import ProgressStats from "./ProgressStats"
+import RepositoryReady from "./RepositoryReady"
 
 interface Props {
     repoName: string
@@ -16,10 +20,12 @@ interface Props {
     repoId: string
 }
 
-const PHASES = [
-    'Fetched file tree',
-    'Parsed files with AST',
-    'Processing module relationships...',
+const PIPELINE_PHASES = [
+    'Repository Retrieved',
+    'Files Parsed',
+    'Generating Embeddings',
+    'Storing Vectors',
+    'Ready',
 ]
 
 export default function IndexingCard({
@@ -31,8 +37,19 @@ export default function IndexingCard({
     repoId
 }: Props) {
     const router = useRouter()
+    const searchParams = useSearchParams()
+    const branchParam = searchParams.get('branch') || 'main'
     const [dots, setDots] = useState('')
     const [retrying, setRetrying] = useState(false)
+    const [showReady, setShowReady] = useState(false)
+    const [processingTime, setProcessingTime] = useState('')
+
+    const isFailed = status === 'FAILED'
+    const isDone = status === 'INDEXED'
+    const progress = totalFiles > 0
+        ? Math.round((indexedFiles / totalFiles) * 100)
+        : 0
+    const estimatedChunks = Math.max(1, Math.floor((totalFiles || 100) * 12.5))
 
     useEffect(() => {
         if (status !== 'INDEXED' && status !== 'FAILED') {
@@ -43,26 +60,33 @@ export default function IndexingCard({
         }
     }, [status])
 
-    const isFailed = status === 'FAILED'
-    const isDone = status === 'INDEXED'
+    useEffect(() => {
+        if (isDone) {
+            const startTime = sessionStorage.getItem(`indexing-start-${repoId}`)
+            if (startTime) {
+                const elapsed = Math.floor((Date.now() - Number(startTime)) / 1000)
+                const mins = Math.floor(elapsed / 60)
+                const secs = elapsed % 60
+                setProcessingTime(`${mins}m ${secs}s`)
+            } else {
+                setProcessingTime('~2-3 minutes')
+            }
+            const timer = setTimeout(() => setShowReady(true), 800)
+            return () => clearTimeout(timer)
+        } else if (status === 'INDEXING') {
+            if (!sessionStorage.getItem(`indexing-start-${repoId}`)) {
+                sessionStorage.setItem(`indexing-start-${repoId}`, String(Date.now()))
+            }
+        }
+    }, [isDone, repoId])
 
-    const progress = totalFiles > 0
-        ? Math.round((indexedFiles / totalFiles) * 100)
-        : 0
+    const activePhaseIndex = isDone ? 4 : isFailed ? -1 : indexedFiles === 0 ? 0 : indexedFiles < totalFiles / 2 ? 1 : 2
 
-    const phases = PHASES.map((label, i) => ({
+    const phases: TimelinePhase[] = PIPELINE_PHASES.map((label, i) => ({
         label,
-        done: isDone || i < 2,
-        active: !isDone && !isFailed && i === 2,
+        done: isDone || i < activePhaseIndex,
+        active: !isDone && !isFailed && i === activePhaseIndex,
     }))
-
-    const phaseText = isFailed
-        ? 'Indexing failed'
-        : isDone
-            ? 'Indexing complete'
-            : totalFiles > 0
-                ? `Generating embeddings for ${totalFiles} files${dots}`
-                : `Fetching repository files${dots}`
 
     const handleRetry = async () => {
         setRetrying(true)
@@ -82,172 +106,156 @@ export default function IndexingCard({
         }
     }
 
+    if (isDone && showReady) {
+        return (
+            <div style={{
+                minHeight: '100vh',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                width: '100%',
+            }}>
+                <RepositoryReady
+                    repoId={repoId}
+                    totalFiles={totalFiles}
+                    totalChunks={estimatedChunks}
+                    model="Qwen3 Embedding"
+                    processingTime={processingTime}
+                />
+            </div>
+        )
+    }
+
+    if (isFailed) {
+        return (
+            <FailedView
+                errorMessage={errorMessage}
+                retrying={retrying}
+                onRetry={handleRetry}
+                onBack={() => router.push('/dashboard')}
+            />
+        )
+    }
+
     return (
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: '100%' }}>
-            {/* Repo Header */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '32px' }}>
-                <svg viewBox="0 0 24 24" fill="currentColor" style={{ width: '24px', height: '24px', color: 'white' }}>
-                    <path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z" />
-                </svg>
-                <span style={{ fontSize: '18px', fontWeight: 600, color: '#F1F5F9' }}>
-                    {repoName || 'Loading...'}
-                </span>
-                {repoName && 
-                    <a
-                        href={`https://github.com/${repoName}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        style={{ color: '#64748B' }}
-                    >
-                        <ExternalLink style={{ width: '16px', height: '16px' }} />
-                    </a>
-                }
+        <div style={{ width: '100%', maxWidth: '1100px', display: 'flex', flexDirection: 'column', gap: '20px' }}>
+            {/* Top Bar — model + branch + repo */}
+            <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                padding: '12px 20px',
+                background: 'rgba(13, 13, 26, 0.8)',
+                border: '1px solid #1E1E2E',
+                borderRadius: '12px',
+                backdropFilter: 'blur(12px)',
+            }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '4px 10px', borderRadius: '6px', background: 'rgba(99, 102, 241, 0.1)', border: '1px solid rgba(99, 102, 241, 0.2)' }}>
+                        <Cpu size={14} color="#818CF8" />
+                        <span style={{ fontSize: '12px', color: '#818CF8', fontWeight: 500 }}>Qwen3 Embedding</span>
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '4px 10px', borderRadius: '6px', background: 'rgba(6, 182, 212, 0.1)', border: '1px solid rgba(6, 182, 212, 0.2)' }}>
+                        <GitBranch size={14} color="#06B6D4" />
+                        <span style={{ fontSize: '12px', color: '#06B6D4', fontWeight: 500 }}>{branchParam}</span>
+                    </div>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <span style={{ fontSize: '14px', fontWeight: 600, color: '#F1F5F9' }}>{repoName || 'Loading...'}</span>
+                    {repoName &&
+                        <a href={`https://github.com/${repoName}`} target="_blank" rel="noopener noreferrer" style={{ color: '#64748B' }}>
+                            <ExternalLink size={14} />
+                        </a>
+                    }
+                </div>
             </div>
 
-            {/* Failed View */}
-            {isFailed ? (
-                <FailedView
-                    errorMessage={errorMessage}
-                    retrying={retrying}
-                    onRetry={handleRetry}
-                    onBack={() => router.push('/dashboard')}
-                />
-            ) : (
-                <>
-                    {/* Processing / Done Card */}
+            {/* Main content grid */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 360px', gap: '20px', alignItems: 'start' }}>
+                {/* Left — Processing Activity Preview */}
+                <div style={{
+                    background: 'rgba(13, 13, 26, 0.95)',
+                    border: '1px solid #1E1E2E',
+                    borderRadius: '14px',
+                    overflow: 'hidden',
+                    height: '420px',
+                    display: 'flex',
+                    flexDirection: 'column',
+                }}>
                     <div style={{
-                        width: '100%',
-                        maxWidth: '660px',
-                        background: 'rgba(13, 13, 26, 0.95)',
-                        backdropFilter: 'blur(20px)',
-                        WebkitBackdropFilter: 'blur(20px)',
-                        border: '1px solid #1E1E2E',
-                        boxShadow: '0 0 40px rgba(0, 0, 0, 0.5)',
-                        borderRadius: '20px',
-                        padding: '40px'
+                        padding: '12px 16px',
+                        borderBottom: '1px solid #1E1E2E',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
                     }}>
-                        {/* Top Section — made heavier than checklist */}
-                        <div style={{ paddingBottom: '28px' }}>
-                            {/* Phase title row */}
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                                <span style={{
-                                    color: '#94A3B8',
-                                    fontSize: '12px',
-                                    fontWeight: 600,
-                                    textTransform: 'uppercase',
-                                    letterSpacing: '0.1em'
-                                }}>
-                                    Current Phase
-                                </span>
-                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
-                                    <h2 style={{
-                                        fontSize: '22px',
-                                        fontWeight: 700,
-                                        color: '#F1F5F9'
-                                    }}>
-                                        {phaseText}
-                                    </h2>
-                                    <span style={{
-                                        fontSize: '22px',
-                                        fontWeight: 700,
-                                        color: '#06B6D4'
-                                    }}>
-                                        {isDone ? '100%' : `${progress}%`}
-                                    </span>
-                                </div>
-                            </div>
-
-                            {/* Margin between title row and progress bar */}
-                            <div style={{ marginTop: '20px' }}>
-                                {/* Progress Bar Track */}
-                                <div style={{
-                                    width: '100%',
-                                    height: '10px',
-                                    background: '#1A1A2E',
-                                    borderRadius: '99px',
-                                    overflow: 'hidden',
-                                    position: 'relative'
-                                }}>
-                                    {/* Progress Bar Fill */}
-                                    <div
-                                        style={{
-                                            width: `${isDone ? 100 : progress}%`,
-                                            height: '100%',
-                                            position: 'relative',
-                                            borderRadius: '99px',
-                                            background: isDone ? '#10B981' : 'linear-gradient(90deg, #6366F1 0%, #06B6D4 100%)',
-                                            transition: 'width 0.5s ease',
-                                            animation: !isDone ? 'progressPulse 2s ease-in-out infinite' : 'none'
-                                        }}
-                                    >
-                                        {!isDone && (
-                                            <div style={{
-                                                position: 'absolute',
-                                                right: 0,
-                                                top: '50%',
-                                                transform: 'translateY(-50%)',
-                                                width: '40px',
-                                                height: '40px',
-                                                background: '#06B6D4',
-                                                filter: 'blur(20px)',
-                                                opacity: 0.6
-                                            }} />
-                                        )}
-                                    </div>
-                                </div>
-
-                                {/* Margin below bar */}
-                                <div style={{ marginBottom: '12px' }} />
-
-                                {/* File count + AI status */}
-                                <div style={{
-                                    display: 'flex',
-                                    justifyContent: 'space-between',
-                                    alignItems: 'center',
-                                    marginBottom: '0'
-                                }}>
-                                    <span style={{ fontSize: '13px', color: '#64748B' }}>
-                                        {indexedFiles} / {totalFiles} files processed
-                                    </span>
-                                    {!isDone && (
-                                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                                            <div style={{
-                                                width: '6px',
-                                                height: '6px',
-                                                borderRadius: '50%',
-                                                background: '#06B6D4'
-                                            }} />
-                                            <span style={{ fontSize: '13px', color: '#06B6D4', fontWeight: 500 }}>
-                                                AI Mapping Active
-                                            </span>
-                                        </div>
-                                    )}
-                                </div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                            <span style={{ fontSize: '12px', fontWeight: 600, color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                                Processing Activity Preview
+                            </span>
+                            <div title="Preview of repository processing activity. Real-time backend streaming will be added in a future release.">
+                                <Info size={12} color="#475569" />
                             </div>
                         </div>
+                        <span style={{ fontSize: '11px', color: '#475569' }}>
+                            {indexedFiles} / {totalFiles} files
+                        </span>
+                    </div>
+                    <div style={{ flex: 1, overflow: 'hidden' }}>
+                        <LiveFileFeed indexedFiles={indexedFiles} totalFiles={totalFiles} />
+                    </div>
+                    <div style={{
+                        padding: '8px 16px',
+                        borderTop: '1px solid #1E1E2E',
+                        fontSize: '11px',
+                        color: '#475569',
+                        textAlign: 'center',
+                    }}>
+                        Preview · Real-time streaming coming in a future release
+                    </div>
+                </div>
 
-                        {/* Divider between top section and checklist */}
-                        <div style={{ height: '1px', background: '#1E1E2E' }} />
-
-                        {/* Checklist Section */}
-                        <div style={{ paddingTop: '24px' }}>
-                            <PhaseChecklist phase={phases} />
-                        </div>
+                {/* Right — Timeline + Tips */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                    <div style={{
+                        background: 'rgba(13, 13, 26, 0.95)',
+                        border: '1px solid #1E1E2E',
+                        borderRadius: '14px',
+                        padding: '20px',
+                    }}>
+                        <span style={{ fontSize: '12px', fontWeight: 600, color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '16px', display: 'block' }}>
+                            Progress Timeline
+                        </span>
+                        <ProgressTimeline phases={phases} />
                     </div>
 
-                    {/* Bottom hint text */}
-                    {!isDone && (
-                        <p style={{
-                            marginTop: '28px',
-                            fontSize: '13px',
-                            color: '#475569',
-                            textAlign: 'center'
-                        }}>
-                            This usually takes 1-2 minutes for a medium-sized repo
-                        </p>
-                    )}
-                </>
-            )}
+                    <EducationalTip />
+                </div>
+            </div>
+
+            {/* Bottom — Progress Stats */}
+            <div style={{
+                background: 'rgba(13, 13, 26, 0.95)',
+                border: '1px solid #1E1E2E',
+                borderRadius: '14px',
+                padding: '20px',
+            }}>
+                <ProgressStats
+                    indexedFiles={indexedFiles}
+                    totalFiles={totalFiles}
+                    estimatedChunks={estimatedChunks}
+                    isDone={isDone}
+                    progress={progress}
+                />
+                {!isDone && (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '12px' }}>
+                        <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#06B6D4', animation: 'pulse-dot 1.5s ease-in-out infinite' }} />
+                        <span style={{ fontSize: '12px', color: '#06B6D4', fontWeight: 500 }}>
+                            AI actively processing{dots}
+                        </span>
+                    </div>
+                )}
+            </div>
         </div>
     )
 }
@@ -264,7 +272,7 @@ function FailedView({
     onBack: () => void
 }) {
     return (
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: '100%' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: '100%', maxWidth: '672px' }}>
             <div style={{
                 width: '80px',
                 height: '80px',
@@ -284,7 +292,6 @@ function FailedView({
 
             <div style={{
                 width: '100%',
-                maxWidth: '42rem',
                 background: 'rgba(17, 17, 24, 0.8)',
                 backdropFilter: 'blur(20px)',
                 WebkitBackdropFilter: 'blur(20px)',
@@ -341,7 +348,7 @@ function FailedView({
                 </div>
             </div>
 
-            <div style={{ display: 'flex', alignItems: 'center', gap: '16px', width: '100%', maxWidth: '672px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '16px', width: '100%' }}>
                 <button
                     onClick={onRetry}
                     disabled={retrying}

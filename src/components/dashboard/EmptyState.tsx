@@ -2,7 +2,11 @@
 
 import { ArrowRight, MapPin } from 'lucide-react'
 
-export default function EmptyState() {
+interface Props {
+    onOpenImportModal?: () => void
+}
+
+export default function EmptyState({ onOpenImportModal }: Props = {}) {
     return (
         <div
             id="empty-state"
@@ -113,7 +117,7 @@ export default function EmptyState() {
                     maxWidth: '700px',
                 }}
             >
-                Map your first codebase
+                Start with your first codebase
             </h2>
 
             {/* Description */}
@@ -126,21 +130,20 @@ export default function EmptyState() {
                     color: '#64748B',
                 }}
             >
-                Connect a GitHub repo and the AI will index every file,
+                Import a GitHub repository and the AI will index every file,
                 function, and module for you.
             </p>
 
             {/* CTA Button */}
-            <a
-                href="https://github.com/new"
-                target="_blank"
-                rel="noopener noreferrer"
+            <button
+                type="button"
+                onClick={onOpenImportModal}
                 style={{
                     display: 'inline-flex',
                     alignItems: 'center',
                     justifyContent: 'center',
                     gap: '0.65rem',
-                    textDecoration: 'none',
+                    border: 'none',
                     color: '#ffffff',
                     fontWeight: 700,
                     borderRadius: '9999px',
@@ -151,11 +154,12 @@ export default function EmptyState() {
                     boxShadow:
                         '0 8px 30px rgba(124,58,237,0.28)',
                     transition: 'all 0.3s ease',
+                    cursor: 'pointer',
                 }}
             >
-                Choose a Repository
+                Import a Repository
                 <ArrowRight size={18} />
-            </a>
+            </button>
 
             {/* Footer Text */}
             <p

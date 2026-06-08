@@ -1,24 +1,18 @@
 'use client'
 
-import { useParams, useRouter } from "next/navigation";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { useIndexingStatus } from "@/hooks/useIndexingStatus"
-import { useEffect } from "react";
 import IndexingCard from "@/components/indexing/IndexingCard";
 import IndexingBackground from "@/components/indexing/IndexingBackground";
 
 export default function IndexingPage() {
     const params = useParams()
-    const router = useRouter()
     const repoId = params.repoId as string
 
     const { status, totalFiles, indexedFiles, errorMessage, repoName } =
         useIndexingStatus(repoId)
 
-    useEffect(() => {
-        if (status === 'INDEXED') {
-            setTimeout(() => router.push(`/repo/${repoId}`), 1500)
-        }
-    }, [status, repoId, router]);
+    const isDone = status === 'INDEXED'
 
     return (
         <div style={{
@@ -27,19 +21,19 @@ export default function IndexingPage() {
             display: 'flex',
             flexDirection: 'column',
             alignItems: 'center',
-            justifyContent: 'center',
-            padding: '24px',
-            fontFamily: 'var(--font-geist-sans), system-ui, sans-serif'
+            padding: isDone ? '0' : '32px 24px',
+            fontFamily: 'var(--font-geist-sans), system-ui, sans-serif',
         }}>
-            <IndexingBackground />
+            {!isDone && <IndexingBackground />}
 
             <div style={{
                 position: 'relative',
                 zIndex: 10,
                 width: '100%',
+                maxWidth: '1100px',
                 display: 'flex',
                 flexDirection: 'column',
-                alignItems: 'center'
+                alignItems: 'center',
             }}>
                 <IndexingCard
                     repoName={repoName}

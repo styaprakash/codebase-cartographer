@@ -9,7 +9,9 @@ import EmptyState from './EmptyState'
 import OnboardingBanner from './OnboardingBanner'
 import RepoGrid from './RepoGrid'
 import RepoSearch from './RepoSearch'
-import type { DashboardRepo } from '@/types'
+import DashboardFilterTabs, { type FilterTab } from './DashboardFilterTabs'
+import ImportRepoModal from './ImportRepoModal'
+import type { DashboardRepo, GithubRepo } from '@/types'
 import type { RepoCardProps } from './RepoCard'
 import { getSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation'
@@ -38,20 +40,20 @@ function saveOptimisticId(id: number) {
 
 export default function DashboardContent() {
     const [query, setQuery] = useState('')
+    const [showImportModal, setShowImportModal] = useState(false)
+    const [activeTab, setActiveTab] = useState<FilterTab>('all')
     const [optimisticIndexingIds, setOptimisticIndexingIds] = useState<Set<number>>(
         () => new Set(loadOptimisticIds())
     )
-    const { repos, isLoading, error, refresh } = useRepos()
+    const { repos, githubRepos, isLoading, error, refresh } = useRepos()
 
     const router = useRouter()
 
     const handleIndexRepo = useCallback(async (repo: DashboardRepo) => {
         try {
             const session = await getSession()
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             const token = (session as any)?.backendToken
 
-            // Repo already exists in backend — branch on its status
             if (repo.backendId) {
                 if (repo.status === 'INDEXING') {
                     router.push(`/indexing/${repo.backendId}`)
@@ -61,7 +63,7 @@ export default function DashboardContent() {
                     router.push(`/repo/${repo.backendId}`)
                     return
                 }
-                // FAILED — retry index with current GitHub metadata (handles renames)
+                // FAILED — retry index with current GitHub metadata
                 await axios.post(
                     `${process.env.NEXT_PUBLIC_API_URL}/api/repos/${repo.backendId}/index`,
                     {
@@ -76,54 +78,23 @@ export default function DashboardContent() {
                 return
             }
 
-            // No backendId — create repo then trigger indexing
-            setOptimisticIndexingIds(prev => new Set(prev).add(repo.githubId))
-            saveOptimisticId(repo.githubId)
-
-            const { data: created } = await axios.post(
-                `${process.env.NEXT_PUBLIC_API_URL}/api/repos`,
-                {
-                    githubRepoId: String(repo.githubId),
-                    name: String(repo.name),
-                    fullName: String(repo.fullName),
-                    branch: String(repo.branch),
-                    language: String(repo.language) ?? 'Unknown'
-                },
-                {
-                    headers: {
-                        'Content-Type': 'application/json',
-                        Authorization: `Bearer ${token}`
-                    }
-                }
-            )
-
-            await axios.post(
-                `${process.env.NEXT_PUBLIC_API_URL}/api/repos/${created.id}/index`,
-                {},
-                {
-                    headers: {
-                        Authorization: `Bearer ${token}`
-                    }
-                }
-            )
-
-            router.push(`/indexing/${created.id}`)
+            // No backendId — navigate to setup page
+            router.push(`/setup/${repo.fullName}`)
         } catch(err){
-            setOptimisticIndexingIds(prev => {
-                const next = new Set(prev)
-                next.delete(repo.githubId)
-                return next
-            })
             console.error('Failed to start indexing: ', err);
         }
+    }, [router])
+
+    const handleImportFromModal = useCallback((githubRepo: GithubRepo) => {
+        setShowImportModal(false)
+        router.push(`/setup/${githubRepo.full_name}`)
     }, [router])
 
     // Force re-fetch on mount so stale cache is replaced with fresh backend data
     useEffect(() => { refresh() }, [refresh])
 
-    //Map DahboardRepo -> RepoCards for the grid
+    // Map DashboardRepo -> RepoCardProps for the grid
     const cardProps: RepoCardProps[] = useMemo(()=> {
-        // Remove stale optimistic entries that the backend has now confirmed
         const backendConfirmed = new Set(
             repos.filter(r => r.status !== 'NOT_INDEXED').map(r => r.githubId)
         )
@@ -142,14 +113,14 @@ export default function DashboardContent() {
                 indexingDetail: `Analyzing ${repo.indexedFiles}/${repo.totalFiles} files....`,
                 actionLabel: isOptimistic ? undefined : getActionLabel(repo.status),
                 repoId: repo.backendId ?? undefined,
+                branch: repo.branch,
                 onIndexClick: () => handleIndexRepo(repo),
             }
         })
     },[repos, optimisticIndexingIds, handleIndexRepo])
 
-
     // Filter by search query
-    const filtered = useMemo(() => {
+    const searched = useMemo(() => {
         const q = query.trim().toLowerCase()
         if (!q) return cardProps
         return cardProps.filter(
@@ -159,6 +130,31 @@ export default function DashboardContent() {
                 (r.language ?? '').toLowerCase().includes(q),
         )
     }, [cardProps, query])
+
+    // Filter by active tab
+    const filtered = useMemo(() => {
+        if (activeTab === 'all') return searched
+        return searched.filter(r => r.status === activeTab)
+    }, [searched, activeTab])
+
+    // Counts for filter tabs
+    const tabCounts = useMemo(() => ({
+        all: cardProps.length,
+        indexed: cardProps.filter(r => r.status === 'ready').length,
+        indexing: cardProps.filter(r => r.status === 'indexing' || r.status === 'queued').length,
+        failed: cardProps.filter(r => r.status === 'failed').length,
+    }), [cardProps])
+
+    // Unindexed repos for the ImportModal
+    const unindexedGithubRepos = useMemo(() => {
+        const indexedIds = new Set(
+            repos.filter(r => r.status !== 'NOT_INDEXED').map(r => r.githubId)
+        )
+        return githubRepos.filter(gr => !indexedIds.has(Number(gr.id)))
+    }, [githubRepos, repos])
+
+    const isEmpty = !isLoading && !error && repos.length === 0
+
     return (
         <div style={{ position: 'relative', minHeight: '100vh', color: '#F1F5F9', overflowX: 'hidden' }}>
             <DashboardStarfield />
@@ -201,7 +197,7 @@ export default function DashboardContent() {
                 )}
 
                 {/* Empty state */}
-                {!isLoading && !error && repos.length === 0 && <EmptyState />}
+                {isEmpty && <EmptyState onOpenImportModal={() => setShowImportModal(true)} />}
 
                 {/* Repos */}
                 {!isLoading && !error && repos.length > 0 && (
@@ -213,7 +209,7 @@ export default function DashboardContent() {
                             </h1>
                             <button
                                 type="button"
-                                // Find the button and replace its style object with:
+                                onClick={() => setShowImportModal(true)}
                                 style={{
                                     display: 'flex',
                                     alignItems: 'center',
@@ -233,16 +229,44 @@ export default function DashboardContent() {
                             </button>
                         </div>
 
+                        {/* Filter Tabs */}
+                        <DashboardFilterTabs active={activeTab} counts={tabCounts} onChange={setActiveTab} />
+
                         {/* Onboarding + Search */}
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                            <OnboardingBanner />
+                            {activeTab === 'all' && <OnboardingBanner />}
                             <RepoSearch value={query} onChange={setQuery} />
                         </div>
 
-                        <RepoGrid repos={filtered} />
+                        {filtered.length === 0 ? (
+                            <div style={{ textAlign: 'center', padding: '60px 0', color: '#64748B' }}>
+                                <p style={{ fontSize: '15px', fontWeight: 500, color: '#94A3B8' }}>
+                                    {activeTab === 'indexed' && 'No indexed repositories yet.'}
+                                    {activeTab === 'indexing' && 'No repositories currently indexing.'}
+                                    {activeTab === 'failed' && 'No failed indexing attempts.'}
+                                    {activeTab === 'all' && 'No repositories match your search.'}
+                                </p>
+                                <p style={{ fontSize: '13px', marginTop: '8px' }}>
+                                    {activeTab === 'all' && 'Try adjusting your search or import a new repository.'}
+                                    {activeTab === 'indexed' && 'Import a repository to get started.'}
+                                    {activeTab === 'failed' && 'Everything is running smoothly.'}
+                                </p>
+                            </div>
+                        ) : (
+                            <RepoGrid repos={filtered} />
+                        )}
                     </div>
                 )}
             </main>
+
+            {/* Import Repository Modal */}
+            {showImportModal && (
+                <ImportRepoModal
+                    repos={unindexedGithubRepos}
+                    onImport={handleImportFromModal}
+                    onClose={() => setShowImportModal(false)}
+                />
+            )}
         </div>
     )
 }

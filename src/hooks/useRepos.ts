@@ -1,4 +1,5 @@
 
+
 /* *****Fetchers***** */
 
 import { GithubRepo, BackendRepo, DashboardRepo } from "@/types";
@@ -39,13 +40,10 @@ async function fetchBackendRepos(backendToken: string): Promise<BackendRepo[]> {
 }
 
 
-
-
 /* *****Merge Logic***** */
 //Combines github repos + backend status into one unified list
 function mergeRepos(githubRepos: GithubRepo[], backendRepos: BackendRepo[]): DashboardRepo[] {
     return githubRepos.map((gr) => {
-        //find the matching backend repo with the github repo
         const backend = backendRepos.find(
             (br) => String(br.githubRepoId) === String(gr.id)
         )
@@ -58,7 +56,7 @@ function mergeRepos(githubRepos: GithubRepo[], backendRepos: BackendRepo[]): Das
             description: gr.description ?? 'No description provided.',
             language: gr.language,
             branch: gr.default_branch,
-            status: backend ? backend.status : 'NOT_INDEXED', //If in backend → use backend status, else NOT_INDEXED
+            status: backend ? backend.status : 'NOT_INDEXED',
             totalFiles: backend?.totalFiles ?? 0,
             indexedFiles: backend?.indexedFiles ?? 0,
             errorMessage: backend?.errorMessage ?? null
@@ -66,7 +64,10 @@ function mergeRepos(githubRepos: GithubRepo[], backendRepos: BackendRepo[]): Das
     })
 }
 
-
+interface ReposData {
+    repos: DashboardRepo[]
+    githubRepos: GithubRepo[]
+}
 
 /* ***** Custom Hook ***** */
 export function useRepos(){
@@ -80,35 +81,34 @@ export function useRepos(){
         | string
         | undefined
 
-    // SWR key — null means "don't fetch yet" (tokens not ready)
     const key = githubToken && backendToken
         ? ['repos', githubToken, backendToken]
         : null
 
     const { data, error, isLoading, mutate } = 
-        useSWR<DashboardRepo[]>(
+        useSWR<ReposData>(
             key,
             async () => {
-                //Fetch both in parallel — each failure handled independently
-                const [githubResult, backendResult] = await Promise.allSettled([
+                const [ghResult, backendResult] = await Promise.allSettled([
                     fetchGithubRepos(githubToken!),
                     fetchBackendRepos(backendToken!)
                 ])
 
-                const githubRepos = githubResult.status === 'fulfilled'
-                    ? githubResult.value
+                const githubRepos = ghResult.status === 'fulfilled'
+                    ? ghResult.value
                     : []
                 const backendRepos = backendResult.status === 'fulfilled'
                     ? backendResult.value
                     : []
 
-                return mergeRepos(githubRepos, backendRepos)
+                return {
+                    githubRepos,
+                    repos: mergeRepos(githubRepos, backendRepos),
+                }
             },
-            //Refresh every 5 secs if any repo is INDEXING
-            //this keeps the progress bar updaing live
             {
                 refreshInterval: (data) => {
-                    const hasIndexing = data?.some(
+                    const hasIndexing = data?.repos?.some(
                         (r) => r.status === 'INDEXING' || r.status === 'PENDING'
                     )
                     return  hasIndexing ? 5000 : 0;
@@ -120,9 +120,10 @@ export function useRepos(){
         )
 
     return {
-        repos: data ?? [],
+        repos: data?.repos ?? [],
+        githubRepos: data?.githubRepos ?? [],
         isLoading,
         error,
-        refresh: mutate,    // call this to force refresh
+        refresh: mutate,
     }
 }
