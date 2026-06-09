@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from "react"
+import React, { useEffect, useState } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { ExternalLink, AlertTriangle, Lightbulb, ArrowRight, Cpu, GitBranch, Info } from 'lucide-react'
 import axios from "axios"
@@ -16,6 +16,9 @@ interface Props {
     status: string
     totalFiles: number
     indexedFiles: number
+    percentage: number
+    currentFile: string | null
+    completedFiles: string[]
     errorMessage: string | null
     repoId: string
 }
@@ -28,13 +31,16 @@ const PIPELINE_PHASES = [
     'Ready',
 ]
 
-export default function IndexingCard({
+function IndexingCard({
     repoName,
     status,
     totalFiles,
     indexedFiles,
+    percentage,
+    currentFile,
+    completedFiles,
     errorMessage,
-    repoId
+    repoId,
 }: Props) {
     const router = useRouter()
     const searchParams = useSearchParams()
@@ -46,9 +52,7 @@ export default function IndexingCard({
 
     const isFailed = status === 'FAILED'
     const isDone = status === 'INDEXED'
-    const progress = totalFiles > 0
-        ? Math.round((indexedFiles / totalFiles) * 100)
-        : 0
+    const progress = percentage
     const estimatedChunks = Math.max(1, Math.floor((totalFiles || 100) * 12.5))
 
     useEffect(() => {
@@ -191,9 +195,9 @@ export default function IndexingCard({
                     }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                             <span style={{ fontSize: '12px', fontWeight: 600, color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
-                                Processing Activity Preview
+                                Processing Activity
                             </span>
-                            <div title="Preview of repository processing activity. Real-time backend streaming will be added in a future release.">
+                            <div title="Live file processing stream from backend.">
                                 <Info size={12} color="#475569" />
                             </div>
                         </div>
@@ -202,7 +206,7 @@ export default function IndexingCard({
                         </span>
                     </div>
                     <div style={{ flex: 1, overflow: 'hidden' }}>
-                        <LiveFileFeed indexedFiles={indexedFiles} totalFiles={totalFiles} />
+                        <LiveFileFeed completedFiles={completedFiles} currentFile={currentFile} />
                     </div>
                     <div style={{
                         padding: '8px 16px',
@@ -211,7 +215,7 @@ export default function IndexingCard({
                         color: '#475569',
                         textAlign: 'center',
                     }}>
-                        Preview · Real-time streaming coming in a future release
+                        Streaming live from backend
                     </div>
                 </div>
 
@@ -259,6 +263,8 @@ export default function IndexingCard({
         </div>
     )
 }
+
+export default React.memo(IndexingCard)
 
 function FailedView({
     errorMessage,

@@ -4,7 +4,7 @@ import Link from 'next/link'
 import { AlertTriangle, ChevronRight, Clock, DatabaseBackup, FolderGit2, RefreshCw, Zap } from 'lucide-react'
 import { useCallback, useRef } from 'react'
 
-export type RepoStatus = 'ready' | 'indexing' | 'not_indexed' | 'failed' | 'queued'
+export type RepoStatus = 'indexed' | 'indexing' | 'not_indexed' | 'failed' | 'queued'
 
 export interface RepoCardProps {
     title: string
@@ -35,8 +35,8 @@ function StatusBadge({ status }: { status: RepoStatus }) {
         fontSize: 10, fontWeight: 700,
         letterSpacing: '0.06em', textTransform: 'uppercase',
     }
-    if (status === 'ready') return (
-        <span style={{ ...base, border: '1px solid rgba(16,185,129,0.25)', background: 'rgba(16,185,129,0.1)', color: '#10B981' }}>Ready</span>
+    if (status === 'indexed') return (
+        <span style={{ ...base, border: '1px solid rgba(16,185,129,0.25)', background: 'rgba(16,185,129,0.1)', color: '#10B981' }}>Indexed</span>
     )
     if (status === 'indexing') return (
         <span style={{ ...base, border: '1px solid rgba(245,158,11,0.25)', background: 'rgba(245,158,11,0.1)', color: '#F59E0B' }}>Indexing...</span>
@@ -58,7 +58,7 @@ function IconBox({ status }: { status: RepoStatus }) {
         display: 'flex', alignItems: 'center', justifyContent: 'center',
         flexShrink: 0,
     }
-    if (status === 'ready') return (
+    if (status === 'indexed') return (
         <div style={{ ...box, background: 'rgba(99,102,241,0.15)' }}>
             <FolderGit2 size={20} color="#6366F1" />
         </div>

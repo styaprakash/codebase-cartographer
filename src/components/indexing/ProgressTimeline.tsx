@@ -1,5 +1,6 @@
 'use client'
 
+import React from 'react'
 import { CheckCircle, Loader2 } from 'lucide-react'
 
 export interface TimelinePhase {
@@ -12,7 +13,7 @@ interface Props {
     phases: TimelinePhase[]
 }
 
-export default function ProgressTimeline({ phases }: Props) {
+function ProgressTimeline({ phases }: Props) {
     return (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
             {phases.map((p, i) => (
@@ -53,3 +54,5 @@ export default function ProgressTimeline({ phases }: Props) {
         </div>
     )
 }
+
+export default React.memo(ProgressTimeline)

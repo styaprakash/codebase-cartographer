@@ -134,13 +134,13 @@ export default function DashboardContent() {
     // Filter by active tab
     const filtered = useMemo(() => {
         if (activeTab === 'all') return searched
-        return searched.filter(r => r.status === activeTab)
+        return searched.filter(r => r.status === activeTab || (activeTab === 'indexing' && r.status === 'queued'))
     }, [searched, activeTab])
 
     // Counts for filter tabs
     const tabCounts = useMemo(() => ({
         all: cardProps.length,
-        indexed: cardProps.filter(r => r.status === 'ready').length,
+        indexed: cardProps.filter(r => r.status === 'indexed').length,
         indexing: cardProps.filter(r => r.status === 'indexing' || r.status === 'queued').length,
         failed: cardProps.filter(r => r.status === 'failed').length,
     }), [cardProps])
@@ -274,7 +274,7 @@ export default function DashboardContent() {
 // ── Helpers ───────────────────────────────────────────────────
 function mapStatus(status: DashboardRepo['status']): RepoCardProps['status'] {
     const map = {
-        INDEXED:     'ready',
+        INDEXED:     'indexed',
         INDEXING:    'indexing',
         PENDING:     'queued',
         FAILED:      'failed',

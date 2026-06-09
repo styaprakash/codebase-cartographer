@@ -1,16 +1,22 @@
 'use client'
 
-import { useParams, useRouter, useSearchParams } from "next/navigation";
-import { useIndexingStatus } from "@/hooks/useIndexingStatus"
+import { useParams } from "next/navigation";
+import { useSession } from "next-auth/react";
+import { useIndexingStream } from "@/hooks/useIndexingStream"
 import IndexingCard from "@/components/indexing/IndexingCard";
 import IndexingBackground from "@/components/indexing/IndexingBackground";
 
 export default function IndexingPage() {
     const params = useParams()
     const repoId = params.repoId as string
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: session } = useSession() as any
+    const authToken = session?.backendToken as string | undefined
 
-    const { status, totalFiles, indexedFiles, errorMessage, repoName } =
-        useIndexingStatus(repoId)
+    const {
+        status, totalFiles, indexedFiles, percentage,
+        currentFile, completedFiles, errorMessage, repoName,
+    } = useIndexingStream(repoId, authToken)
 
     const isDone = status === 'INDEXED'
 
@@ -40,6 +46,9 @@ export default function IndexingPage() {
                     status={status}
                     totalFiles={totalFiles}
                     indexedFiles={indexedFiles}
+                    percentage={percentage}
+                    currentFile={currentFile}
+                    completedFiles={completedFiles}
                     errorMessage={errorMessage}
                     repoId={repoId}
                 />

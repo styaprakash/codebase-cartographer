@@ -1,5 +1,7 @@
 'use client'
 
+import React from 'react'
+
 interface Props {
     indexedFiles: number
     totalFiles: number
@@ -8,7 +10,7 @@ interface Props {
     progress: number
 }
 
-export default function ProgressStats({ indexedFiles, totalFiles, estimatedChunks, isDone, progress }: Props) {
+function ProgressStats({ indexedFiles, totalFiles, estimatedChunks, isDone, progress }: Props) {
     return (
         <div style={{ width: '100%' }}>
             <div style={{
@@ -53,3 +55,5 @@ export default function ProgressStats({ indexedFiles, totalFiles, estimatedChunk
         </div>
     )
 }
+
+export default React.memo(ProgressStats)
