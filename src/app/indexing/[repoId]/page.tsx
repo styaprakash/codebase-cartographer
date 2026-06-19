@@ -10,13 +10,16 @@ export default function IndexingPage() {
     const params = useParams()
     const repoId = params.repoId as string
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data: session } = useSession() as any
-    const authToken = session?.backendToken as string | undefined
+    const { data: session, status: sessionStatus } = useSession() as {
+        data?: { backendToken?: string }
+        status: 'loading' | 'authenticated' | 'unauthenticated'
+    }
+    const authToken = session?.backendToken
 
     const {
         status, totalFiles, indexedFiles, percentage,
         currentFile, completedFiles, errorMessage, repoName,
-    } = useIndexingStream(repoId, authToken)
+    } = useIndexingStream(repoId, authToken, sessionStatus)
 
     const isDone = status === 'INDEXED'
 

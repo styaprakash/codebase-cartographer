@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useRef, useState, useCallback } from 'react'
+import { getSession } from 'next-auth/react'
 
 interface ProgressPayload {
     status: string
@@ -50,6 +51,7 @@ const MAX_COMPLETED_FILES = 200
 export function useIndexingStream(
     repoId: string,
     authToken: string | undefined,
+    sessionStatus: 'loading' | 'authenticated' | 'unauthenticated' = 'authenticated',
 ): IndexingStreamState {
     const [state, setState] = useState<IndexingStreamState>(INITIAL_STATE)
 
@@ -60,8 +62,15 @@ export function useIndexingStream(
     const isTerminalRef = useRef(false)
     const connectRef = useRef<(() => void) | null>(null)
 
-    const connect = useCallback(() => {
-        if (!authToken || !repoId || !mountedRef.current) return
+    const connect = useCallback(async () => {
+        if (!repoId || !mountedRef.current || sessionStatus === 'loading') return
+
+        let token = authToken
+        if (!token) {
+            const session = await getSession()
+            token = (session as { backendToken?: string } | null)?.backendToken
+        }
+        if (!token || !mountedRef.current) return
 
         if (esRef.current) {
             esRef.current.close()
@@ -70,7 +79,7 @@ export function useIndexingStream(
 
         const url = `${process.env.NEXT_PUBLIC_API_URL}/api/repos/${repoId}/stream`
         const es = new EventSource(
-            `${url}?token=${encodeURIComponent(authToken)}`,
+            `${url}?access_token=${encodeURIComponent(token)}`,
         )
         esRef.current = es
 
@@ -142,10 +151,13 @@ export function useIndexingStream(
                 const delay =
                     BASE_DELAY * Math.pow(2, reconnectAttempt.current)
                 reconnectAttempt.current += 1
-                reconnectTimer.current = setTimeout(() => connectRef.current?.(), delay)
+                reconnectTimer.current = setTimeout(
+                    () => void connectRef.current?.(),
+                    delay,
+                )
             }
         }
-    }, [repoId, authToken])
+    }, [repoId, authToken, sessionStatus])
 
     useEffect(() => {
         connectRef.current = connect
@@ -155,7 +167,7 @@ export function useIndexingStream(
         mountedRef.current = true
         isTerminalRef.current = false
 
-        connect()
+        void connect()
 
         return () => {
             mountedRef.current = false
