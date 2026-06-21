@@ -5,10 +5,9 @@ import { getSession } from 'next-auth/react'
 
 interface ProgressPayload {
     status: string
-    totalFiles: number
-    indexedFiles: number
-    percentage: number
-    currentFile: string | null
+    total_files: number
+    progress: number
+    file_path: string | null
 }
 
 interface FileCompletePayload {
@@ -61,6 +60,10 @@ export function useIndexingStream(
     const mountedRef = useRef(true)
     const isTerminalRef = useRef(false)
     const connectRef = useRef<(() => void) | null>(null)
+    const pendingFilesRef = useRef<string[]>([])
+    const latestProgressRef = useRef<ProgressPayload | null>(null)
+    const lastSeenFileRef = useRef<string | null>(null)
+    const flushIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
 
     const connect = useCallback(async () => {
         if (!repoId || !mountedRef.current || sessionStatus === 'loading') return
@@ -75,6 +78,10 @@ export function useIndexingStream(
         if (esRef.current) {
             esRef.current.close()
             esRef.current = null
+        }
+        if (flushIntervalRef.current) {
+            clearInterval(flushIntervalRef.current)
+            flushIntervalRef.current = null
         }
 
         const url = `${process.env.NEXT_PUBLIC_API_URL}/api/repos/${repoId}/stream`
@@ -92,33 +99,62 @@ export function useIndexingStream(
             setState(prev => ({ ...prev, isConnected: true }))
         }
 
+        // Setup 150ms batched flush interval
+        flushIntervalRef.current = setInterval(() => {
+            if (!mountedRef.current) return
+            
+            const latest = latestProgressRef.current
+            const pendingFiles = pendingFilesRef.current
+
+            if (!latest && pendingFiles.length === 0) return
+
+            setState(prev => {
+                let nextCompleted = prev.completedFiles
+                if (pendingFiles.length > 0) {
+                    // Prepend new pending files (most recent first)
+                    const newFiles = [...pendingFiles].reverse()
+                    nextCompleted = [...newFiles, ...prev.completedFiles]
+                    
+                    // Deduplicate and slice to keep memory low
+                    nextCompleted = Array.from(new Set(nextCompleted)).slice(0, 10)
+                }
+
+                return {
+                    ...prev,
+                    status: latest ? latest.status : prev.status,
+                    totalFiles: latest ? (latest.total_files || prev.totalFiles) : prev.totalFiles,
+                    indexedFiles: latest ? (latest.progress || prev.indexedFiles) : prev.indexedFiles,
+                    percentage: latest && latest.total_files > 0 ? Math.round((latest.progress / latest.total_files) * 100) : prev.percentage,
+                    currentFile: latest ? latest.file_path : prev.currentFile,
+                    completedFiles: nextCompleted,
+                    isConnected: true,
+                }
+            })
+
+            // Clear buffers
+            pendingFilesRef.current = []
+            latestProgressRef.current = null
+        }, 150)
+
         es.addEventListener('progress', (e: MessageEvent) => {
             if (!mountedRef.current) return
             const data: ProgressPayload = JSON.parse(e.data)
-            setState(prev => ({
-                ...prev,
-                status: data.status,
-                totalFiles: data.totalFiles,
-                indexedFiles: data.indexedFiles,
-                percentage: data.percentage,
-                currentFile: data.currentFile,
-                isConnected: true,
-            }))
+            
+            // If the file changed, buffer the last seen file
+            if (lastSeenFileRef.current && lastSeenFileRef.current !== data.file_path) {
+                pendingFilesRef.current.push(lastSeenFileRef.current)
+            }
+            if (data.file_path) {
+                lastSeenFileRef.current = data.file_path
+            }
+            
+            latestProgressRef.current = data
         })
 
         es.addEventListener('file_complete', (e: MessageEvent) => {
             if (!mountedRef.current) return
             const data: FileCompletePayload = JSON.parse(e.data)
-            setState(prev => ({
-                ...prev,
-                completedFiles: (
-                    prev.completedFiles.length >= MAX_COMPLETED_FILES
-                        ? prev.completedFiles.slice(-(MAX_COMPLETED_FILES - 1))
-                        : prev.completedFiles
-                ).concat(data.file),
-                currentFile: null,
-                isConnected: true,
-            }))
+            pendingFilesRef.current.push(data.file)
         })
 
         es.addEventListener('status', (e: MessageEvent) => {
@@ -175,6 +211,10 @@ export function useIndexingStream(
             if (reconnectTimer.current) {
                 clearTimeout(reconnectTimer.current)
                 reconnectTimer.current = null
+            }
+            if (flushIntervalRef.current) {
+                clearInterval(flushIntervalRef.current)
+                flushIntervalRef.current = null
             }
             if (esRef.current) {
                 esRef.current.close()
