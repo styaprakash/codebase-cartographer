@@ -6,7 +6,6 @@ import { useRouter } from 'next/navigation'
 interface Props {
     repoId: string
     totalFiles: number
-    totalChunks: number
     model: string
     processingTime: string
 }
@@ -18,7 +17,7 @@ const NEXT_STEPS = [
     { icon: BookOpen, label: 'Search your code semantically', desc: 'Find related code across your entire repository' },
 ]
 
-export default function RepositoryReady({ repoId, totalFiles, totalChunks, model, processingTime }: Props) {
+export default function RepositoryReady({ repoId, totalFiles, model, processingTime }: Props) {
     const router = useRouter()
 
     return (
@@ -67,13 +66,6 @@ export default function RepositoryReady({ repoId, totalFiles, totalChunks, model
                         <div>
                             <p style={{ fontSize: '11px', color: '#64748B', margin: 0 }}>Files Indexed</p>
                             <p style={{ fontSize: '16px', fontWeight: 700, color: '#F1F5F9', margin: 0 }}>{totalFiles.toLocaleString()}</p>
-                        </div>
-                    </div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '12px', borderRadius: '10px', background: '#111118' }}>
-                        <Layers size={18} color="#818CF8" />
-                        <div>
-                            <p style={{ fontSize: '11px', color: '#64748B', margin: 0 }}>Chunks Generated</p>
-                            <p style={{ fontSize: '16px', fontWeight: 700, color: '#F1F5F9', margin: 0 }}>{totalChunks.toLocaleString()}</p>
                         </div>
                     </div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '12px', borderRadius: '10px', background: '#111118' }}>

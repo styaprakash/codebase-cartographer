@@ -63,17 +63,25 @@ export default function DashboardContent() {
                     router.push(`/repo/${repo.backendId}`)
                     return
                 }
-                // FAILED — retry index with current GitHub metadata
-                await axios.post(
-                    `${process.env.NEXT_PUBLIC_API_URL}/api/repos/${repo.backendId}/index`,
-                    {
-                        name: repo.name,
-                        fullName: repo.fullName,
-                        branch: repo.branch,
-                        language: repo.language,
-                    },
-                    { headers: { Authorization: `Bearer ${token}` } }
-                )
+                try {
+                    // FAILED — retry index with current GitHub metadata
+                    await axios.post(
+                        `/api/proxy/repos/${repo.backendId}/index`,
+                        {
+                            name: repo.name,
+                            fullName: repo.fullName,
+                            branch: repo.branch,
+                            language: repo.language,
+                        },
+                        { headers: { Authorization: `Bearer ${token}` } }
+                    )
+                } catch (innerErr) {
+                    if (axios.isAxiosError(innerErr) && innerErr.response?.status === 409) {
+                        console.warn('Indexing already in progress (409). Proceeding to SSE stream.')
+                    } else {
+                        throw innerErr
+                    }
+                }
                 router.push(`/indexing/${repo.backendId}`)
                 return
             }

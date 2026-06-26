@@ -28,7 +28,7 @@ export default function RepositorySetup({ repo }: Props) {
             const token = (session as any)?.backendToken
 
             const { data: created } = await axios.post(
-                `${process.env.NEXT_PUBLIC_API_URL}/api/repos`,
+                `/api/proxy/repos`,
                 {
                     githubRepoId: String(repo.id),
                     name: String(repo.name),
@@ -45,15 +45,23 @@ export default function RepositorySetup({ repo }: Props) {
                 },
             )
 
-            await axios.post(
-                `${process.env.NEXT_PUBLIC_API_URL}/api/repos/${created.id}/index`,
-                {},
-                {
-                    headers: {
-                        Authorization: `Bearer ${token}`,
+            try {
+                await axios.post(
+                    `/api/proxy/repos/${created.id}/index`,
+                    {},
+                    {
+                        headers: {
+                            Authorization: `Bearer ${token}`,
+                        },
                     },
-                },
-            )
+                )
+            } catch (innerErr) {
+                if (axios.isAxiosError(innerErr) && innerErr.response?.status === 409) {
+                    console.warn('Indexing already in progress (409). Proceeding to SSE stream.')
+                } else {
+                    throw innerErr
+                }
+            }
 
             router.push(`/indexing/${created.id}`)
         } catch (err) {

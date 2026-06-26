@@ -74,7 +74,7 @@ export interface ChatMessage {
   id: string
   role: 'user' | 'assistant'
   content: string
-  sources?: SourceReference[]
+  citations?: string[]
   timestamp: string
 }
 

@@ -1,7 +1,8 @@
 import axios from 'axios'
 import { getSession } from 'next-auth/react'
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL
+const isServer = typeof window === 'undefined'
+const API_URL = isServer ? process.env.NEXT_PUBLIC_API_URL : '/api/proxy'
 
 //Create axios instance with base URL
 const api = axios.create({
@@ -58,7 +59,7 @@ export const repoApi = {
 }
 
 export const querApi = {
-    ask: (repoId: string, question: string) => api.post(`/api/repos/${repoId}/query`, {question}),
+    ask: (repoId: string, question: string, llmProvider: string) => api.post(`/api/chat/${repoId}`, { query: question, llmProvider }),
     getHistory: (repoId: string) => {
         return api.get(`/api/repos/${repoId}/queries`)
     }

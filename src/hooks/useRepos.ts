@@ -29,7 +29,7 @@ async function fetchGithubRepos(githubToken: string): Promise<GithubRepo[]> {
 //fetches indexed repos from backend
 async function fetchBackendRepos(backendToken: string): Promise<BackendRepo[]> {
     const res = await axios.get(
-        `${process.env.NEXT_PUBLIC_API_URL}/api/repos`,
+        `/api/proxy/repos`,
         {
             headers: {
                 Authorization: `Bearer ${backendToken}`,

@@ -53,7 +53,8 @@ function IndexingCard({
     const isFailed = status === 'FAILED'
     const isDone = status === 'INDEXED'
     const progress = percentage
-    const estimatedChunks = Math.max(1, Math.floor((totalFiles || 100) * 12.5))
+
+    console.log('Current UI State:', { status: status, total: totalFiles, indexed: indexedFiles })
 
     useEffect(() => {
         if (status !== 'INDEXED' && status !== 'FAILED') {
@@ -97,11 +98,19 @@ function IndexingCard({
         try {
             const session = await getSession()
             const token = (session as any)?.backendToken
-            await axios.post(
-                `${process.env.NEXT_PUBLIC_API_URL}/api/repos/${repoId}/index`,
-                {},
-                { headers: { Authorization: `Bearer ${token}` } }
-            )
+            try {
+                await axios.post(
+                    `/api/proxy/repos/${repoId}/index`,
+                    {},
+                    { headers: { Authorization: `Bearer ${token}` } }
+                )
+            } catch (innerErr) {
+                if (axios.isAxiosError(innerErr) && innerErr.response?.status === 409) {
+                    console.warn('Indexing already in progress (409). Reloading stream.')
+                } else {
+                    throw innerErr
+                }
+            }
             window.location.reload()
         } catch (err) {
             console.error('Retry failed:', err)
@@ -122,7 +131,6 @@ function IndexingCard({
                 <RepositoryReady
                     repoId={repoId}
                     totalFiles={totalFiles}
-                    totalChunks={estimatedChunks}
                     model="Qwen3 Embedding"
                     processingTime={processingTime}
                 />
@@ -247,7 +255,6 @@ function IndexingCard({
                 <ProgressStats
                     indexedFiles={indexedFiles}
                     totalFiles={totalFiles}
-                    estimatedChunks={estimatedChunks}
                     isDone={isDone}
                     progress={progress}
                 />
@@ -392,7 +399,7 @@ function FailedView({
                         fontSize: 'inherit'
                     }}
                 >
-                    Back to Dashboard
+                    Try Another Repository
                 </button>
             </div>
 
