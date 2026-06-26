@@ -133,10 +133,9 @@ export function useIndexingStream(
                             setState(prev => ({
                                 ...prev,
                                 status: data.status,
-                                totalFiles: data.totalFiles,
-                                indexedFiles: data.indexedFiles,
-                                percentage: data.percentage,
-                                currentFile: data.currentFile,
+                                totalFiles: data.total_files ?? prev.totalFiles,
+                                indexedFiles: data.progress ?? prev.indexedFiles,
+                                currentFile: data.file_path ?? prev.currentFile,
                                 isConnected: true,
                             }))
                         } else if (event.event === 'file_started') {
