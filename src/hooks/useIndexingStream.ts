@@ -6,10 +6,9 @@ import { fetchEventSource } from '@microsoft/fetch-event-source'
 
 interface ProgressPayload {
     status: string
-    totalFiles: number
-    indexedFiles: number
-    percentage: number
-    currentFile: string | null
+    total_files: number
+    progress: number
+    file_path: string | null
 }
 
 interface FileCompletePayload {
