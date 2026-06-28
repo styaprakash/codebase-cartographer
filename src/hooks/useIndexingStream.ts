@@ -97,8 +97,7 @@ export function useIndexingStream(
             }
             abortControllerRef.current = new AbortController()
 
-            const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080'
-            const url = `${API_URL}/api/sse/indexing/${repoId}`
+            const url = `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080'}/api/sse/indexing/${repoId}`
 
             fetchEventSource(url, {
                 method: 'GET',
@@ -197,6 +196,9 @@ export function useIndexingStream(
                                 errorMessage: data.errorMessage ?? prev.errorMessage,
                                 isConnected: !isTerminalRef.current,
                             }))
+                            if (isTerminalRef.current) {
+                                abortControllerRef.current?.abort()
+                            }
                         }
                     } catch (e) {
                         console.error('SSE parse error:', e, 'event:', event.event, 'data:', event.data)
@@ -205,18 +207,7 @@ export function useIndexingStream(
 
                 onclose: () => {
                     console.warn('SSE stream closed by server.')
-                    if (isTerminalRef.current) {
-                        return // Already handled terminal state in onmessage
-                    }
-                    if (mountedRef.current) {
-                        setState(prev => {
-                            if (prev.status !== 'FAILED') {
-                                return { ...prev, isConnected: false, status: 'INDEXED' }
-                            }
-                            return { ...prev, isConnected: false }
-                        })
-                    }
-                    isTerminalRef.current = true
+                    throw new Error('Stream closed by backend')
                 },
 
                 onerror: (err) => {
@@ -224,10 +215,7 @@ export function useIndexingStream(
                     if (mountedRef.current) {
                         setState(prev => ({ ...prev, isConnected: false }))
                     }
-                    if (isTerminalRef.current) {
-                        throw err // Prevent retry after terminal status
-                    }
-                    // Otherwise fetchEventSource retries automatically
+                    throw err
                 },
             }).catch((err) => {
                 if (!mountedRef.current) return

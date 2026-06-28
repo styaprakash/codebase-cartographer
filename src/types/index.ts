@@ -44,20 +44,21 @@ export interface DashboardRepo {
 }
 
 // ── Embedding Models ────────────────────────────────
-export type EmbeddingModel = 'qwen3' | 'embedding-gemma' | 'nv-embed-v2'
+export type EmbeddingModel = 'OPENROUTER_QWEN_EMBEDDING' | 'GEMINI_EMBEDDING' | 'QWEN3_EMBEDDING'
+
+export type BrandTheme = 'qwen' | 'gemini'
 
 export interface ModelInfo {
     id: EmbeddingModel
     name: string
     description: string
-    badge?: 'Recommended' | 'Coming Soon' | 'Experimental'
-    available: boolean
+    brandTheme: BrandTheme
 }
 
 export const AVAILABLE_MODELS: ModelInfo[] = [
-    { id: 'qwen3', name: 'Qwen3 Embedding', description: 'Balanced speed and retrieval quality. Running locally through Ollama.', badge: 'Recommended', available: true },
-    { id: 'embedding-gemma', name: 'EmbeddingGemma', description: 'Strong semantic understanding and documentation retrieval.', badge: 'Coming Soon', available: false },
-    { id: 'nv-embed-v2', name: 'NVIDIA NV-Embed-v2', description: 'Highest retrieval quality for complex repositories.', badge: 'Coming Soon', available: false },
+    { id: 'OPENROUTER_QWEN_EMBEDDING', name: 'OpenRouter (Qwen3 8B)', description: 'Blazing fast cloud embeddings.', brandTheme: 'qwen' },
+    { id: 'GEMINI_EMBEDDING', name: 'Google Gemini', description: "Strong semantic understanding using Gemini's text-embedding-004.", brandTheme: 'gemini' },
+    { id: 'QWEN3_EMBEDDING', name: 'Local Qwen3 (Ollama)', description: 'Runs entirely locally on your hardware. Requires GPU.', brandTheme: 'qwen' },
 ]
 
 // ── File Tree Types ──────────────────────────────────

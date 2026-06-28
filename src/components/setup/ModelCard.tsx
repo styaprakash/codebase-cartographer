@@ -1,28 +1,83 @@
 'use client'
 
-import type { ModelInfo } from '@/types'
-import { CheckCircle2, Clock } from 'lucide-react'
+import type { ModelInfo, BrandTheme } from '@/types'
+import { CheckCircle2, Bot, Sparkles } from 'lucide-react'
+
+// ── Brand color map ──────────────────────────────────────────────────────────
+// Each brand gets: border, glow (box-shadow), background tint, and active check color.
+// To add a new brand, just add an entry here and a lucide icon in the icon map below.
+const BRAND_STYLES: Record<BrandTheme, {
+    border: string
+    glow: string
+    bg: string
+    check: string
+    hoverBorder: string
+}> = {
+    qwen: {
+        border: 'rgba(37, 99, 235, 0.4)',
+        glow: '0 0 15px rgba(37, 99, 235, 0.3)',
+        bg: 'rgba(37, 99, 235, 0.06)',
+        check: '#3B82F6',
+        hoverBorder: 'rgba(37, 99, 235, 0.25)',
+    },
+    gemini: {
+        border: 'rgba(168, 85, 247, 0.4)',
+        glow: '0 0 15px rgba(168, 85, 247, 0.3)',
+        bg: 'rgba(168, 85, 247, 0.06)',
+        check: '#A855F7',
+        hoverBorder: 'rgba(168, 85, 247, 0.25)',
+    },
+}
+
+// ── Brand icon map ───────────────────────────────────────────────────────────
+// Placeholder icons — swap these for actual SVG logos when available.
+const BRAND_ICONS: Record<BrandTheme, React.ComponentType<{ size?: number; style?: React.CSSProperties }>> = {
+    qwen: Bot,
+    gemini: Sparkles,
+}
 
 interface Props {
     model: ModelInfo
-    isPrimary?: boolean
+    isSelected: boolean
+    onSelect: (id: string) => void
 }
 
-export default function ModelCard({ model, isPrimary = false }: Props) {
-    const isActive = model.available
+export default function ModelCard({ model, isSelected, onSelect }: Props) {
+    const theme = BRAND_STYLES[model.brandTheme]
+    const Icon = BRAND_ICONS[model.brandTheme]
 
     return (
-        <div style={{
-            width: '100%',
-            padding: '20px',
-            borderRadius: '14px',
-            border: `1px solid ${isActive ? 'rgba(99, 102, 241, 0.3)' : '#1A1A2E'}`,
-            background: isActive ? 'rgba(99, 102, 241, 0.06)' : 'rgba(13, 13, 26, 0.4)',
-            opacity: isActive ? 1 : 0.5,
-            position: 'relative',
-            overflow: 'hidden',
-        }}>
-            {isActive && isPrimary && (
+        <button
+            type="button"
+            onClick={() => onSelect(model.id)}
+            style={{
+                width: '100%',
+                padding: '20px',
+                borderRadius: '14px',
+                border: `1px solid ${isSelected ? theme.border : '#1A1A2E'}`,
+                background: isSelected ? theme.bg : 'rgba(13, 13, 26, 0.4)',
+                boxShadow: isSelected ? theme.glow : 'none',
+                position: 'relative',
+                overflow: 'hidden',
+                cursor: 'pointer',
+                textAlign: 'left',
+                outline: 'none',
+                transition: 'border-color 0.2s ease, background 0.2s ease, box-shadow 0.2s ease',
+            }}
+            onMouseOver={(e) => {
+                if (!isSelected) {
+                    e.currentTarget.style.borderColor = theme.hoverBorder
+                    e.currentTarget.style.boxShadow = theme.glow.replace('0.3)', '0.12)')
+                }
+            }}
+            onMouseOut={(e) => {
+                if (!isSelected) {
+                    e.currentTarget.style.borderColor = '#1A1A2E'
+                    e.currentTarget.style.boxShadow = 'none'
+                }
+            }}
+        >
+            {isSelected && (
                 <div style={{
                     position: 'absolute',
                     top: '12px',
@@ -31,7 +86,7 @@ export default function ModelCard({ model, isPrimary = false }: Props) {
                     alignItems: 'center',
                     gap: '4px',
                     fontSize: '11px',
-                    color: '#10B981',
+                    color: theme.check,
                     fontWeight: 500,
                 }}>
                     <CheckCircle2 size={14} />
@@ -41,46 +96,19 @@ export default function ModelCard({ model, isPrimary = false }: Props) {
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <span style={{ fontSize: '16px', fontWeight: 700, color: isActive ? '#F1F5F9' : '#475569' }}>
+                    {/* ── Brand icon — replace <Icon /> with <img src="..." /> for real logos ── */}
+                    <Icon
+                        size={18}
+                        style={{ color: isSelected ? theme.check : '#475569', flexShrink: 0 }}
+                    />
+                    <span style={{ fontSize: '16px', fontWeight: 700, color: isSelected ? '#F1F5F9' : '#94A3B8' }}>
                         {model.name}
                     </span>
-                    {model.badge && isActive && (
-                        <span style={{
-                            fontSize: '10px',
-                            fontWeight: 700,
-                            textTransform: 'uppercase',
-                            letterSpacing: '0.06em',
-                            padding: '3px 8px',
-                            borderRadius: '6px',
-                            background: 'rgba(99, 102, 241, 0.15)',
-                            color: '#818CF8',
-                        }}>
-                            {model.badge}
-                        </span>
-                    )}
-                    {!isActive && (
-                        <span style={{
-                            fontSize: '10px',
-                            fontWeight: 700,
-                            textTransform: 'uppercase',
-                            letterSpacing: '0.06em',
-                            padding: '3px 8px',
-                            borderRadius: '6px',
-                            background: 'rgba(245, 158, 11, 0.1)',
-                            color: '#F59E0B',
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '4px',
-                        }}>
-                            <Clock size={10} />
-                            Coming Soon
-                        </span>
-                    )}
                 </div>
-                <p style={{ fontSize: '13px', color: isActive ? '#94A3B8' : '#475569', lineHeight: 1.5, margin: 0 }}>
+                <p style={{ fontSize: '13px', color: isSelected ? '#94A3B8' : '#64748B', lineHeight: 1.5, margin: 0, paddingLeft: '26px' }}>
                     {model.description}
                 </p>
             </div>
-        </div>
+        </button>
     )
 }

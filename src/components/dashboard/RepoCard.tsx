@@ -19,6 +19,7 @@ export interface RepoCardProps {
     repoId?: string
     branch?: string
     onIndexClick?: () => void
+    onClick?: () => void
 }
 
 const LANGUAGE_COLORS: Record<string, string> = {
@@ -89,7 +90,7 @@ export default function RepoCard({
     title, description, language, languageColor,
     status, indexingProgress = 65,
     indexingDetail = 'Analyzing files...',
-    actionLabel, actionUrl = '', repoId, branch, onIndexClick,
+    actionLabel, actionUrl = '', repoId, branch, onIndexClick, onClick,
 }: RepoCardProps) {
     const cardRef = useRef<HTMLDivElement>(null)
     const glowRef = useRef<HTMLDivElement>(null)
@@ -153,7 +154,7 @@ export default function RepoCard({
     }, [borderColor])
 
     return (
-        <div ref={cardRef} style={cardStyle} onMouseMove={onMouseMove} onMouseLeave={onMouseLeave}>
+        <div ref={cardRef} style={cardStyle} onMouseMove={onMouseMove} onMouseLeave={onMouseLeave} onClick={onClick}>
             
             <div 
                 ref={glowRef}
@@ -249,7 +250,10 @@ export default function RepoCard({
                     {actionLabel === 'Index Repo' && (
                         <button
                             type="button"
-                            onClick={onIndexClick}
+                            onClick={(e) => {
+                                e.stopPropagation()
+                                onIndexClick?.()
+                            }}
                             style={{
                                 marginLeft: 'auto', display: 'inline-flex',
                                 alignItems: 'center', gap: 6,
@@ -264,7 +268,10 @@ export default function RepoCard({
                     )}
 
                     {actionLabel === 'Retry' && (
-                        <button type="button" onClick={onIndexClick} style={{
+                        <button type="button" onClick={(e) => {
+                            e.stopPropagation()
+                            onIndexClick?.()
+                        }} style={{
                             marginLeft: 'auto', display: 'inline-flex', alignItems: 'center', gap: 6,
                             padding: '7px 14px', borderRadius: 8,
                             border: '1px solid rgba(239,68,68,0.4)',

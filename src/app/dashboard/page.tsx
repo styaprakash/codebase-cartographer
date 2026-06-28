@@ -54,8 +54,8 @@ import { redirect } from 'next/navigation';
 export default async function DashboardPage() {
     const session = await auth()
 
-    //if nolt logged in -> just redirect to login
-    if(!session) redirect('/auth/login')
+    //if not logged in -> redirect to landing page
+    if(!session) redirect('/')
 
     //Render the DashboardContent fetches ist own data using useRepos
     return <DashboardContent />

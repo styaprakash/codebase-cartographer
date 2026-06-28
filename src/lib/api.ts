@@ -1,8 +1,7 @@
 import axios from 'axios'
-import { getSession } from 'next-auth/react'
+import { getSession, signOut } from 'next-auth/react'
 
-const isServer = typeof window === 'undefined'
-const API_URL = isServer ? process.env.NEXT_PUBLIC_API_URL : '/api/proxy'
+const API_URL = '/api/proxy'
 
 //Create axios instance with base URL
 const api = axios.create({
@@ -32,10 +31,13 @@ api.interceptors.request.use(async (config) => {
 // Runs after every API response
 api.interceptors.response.use(
     (response) => response,
-    (error) => {
-        //401 if the toxen expired, redirects to login
-        if(error.response.status === 401){
-            window.location.href = '/auth/login'
+    async (error) => {
+        // 401 if the token expired or is missing — clear session and redirect to landing
+        if (error.response?.status === 401) {
+            await signOut({ redirect: false })
+            if (typeof window !== 'undefined' && window.location.pathname !== '/') {
+                window.location.href = '/'
+            }
         }
         return Promise.reject(error)
     }
@@ -47,27 +49,27 @@ api.interceptors.response.use(
 
 // API Methods-------------------------------------------------
 export const userApi = {
-    getMe: () => api.get('/api/me')
+    getMe: () => api.get('/me')
 }
 
 export const repoApi = {
-    getAll: () => api.get('/api/repos'),
-    getById: (id: string) => api.get(`/api/repos/${id}`),
-    create: (data: any) => api.post('/api/repos', data),
-    triggerIndex: (id: string) => api.post(`/api/repos/${id}/index`),
-    getStatus: (id: string) => api.get(`/api/repos/${id}/status`)
+    getAll: () => api.get('/repos'),
+    getById: (id: string) => api.get(`/repos/${id}`),
+    create: (data: any) => api.post('/repos', data),
+    triggerIndex: (id: string, metadata?: any) => api.post(`/repos/${id}/index`, metadata),
+    getStatus: (id: string) => api.get(`/repos/${id}/status`)
 }
 
 export const querApi = {
-    ask: (repoId: string, question: string, llmProvider: string) => api.post(`/api/chat/${repoId}`, { query: question, llmProvider }),
+    ask: (repoId: string, question: string, llmProvider: string) => api.post(`/chat/${repoId}`, { query: question, llmProvider }),
     getHistory: (repoId: string) => {
-        return api.get(`/api/repos/${repoId}/queries`)
+        return api.get(`/repos/${repoId}/queries`)
     }
 }
 
 export const graphApi = {
-    getGraph: (repoId: string) => api.get(`/api/repos/${repoId}/graph`),
-    getFiles: (repoId: string) => api.get(`/api/repos/${repoId}/files`),
+    getGraph: (repoId: string) => api.get(`/repos/${repoId}/graph`),
+    getFiles: (repoId: string) => api.get(`/repos/${repoId}/files`),
 }
 
 export default api

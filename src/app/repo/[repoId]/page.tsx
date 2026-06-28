@@ -9,9 +9,9 @@ export default async function RepoExplorerPage({
 }) {
     const session = await auth();
 
-    // If not logged in -> redirect to login
+    // If not logged in -> redirect to landing page
     if (!session) {
-        redirect("/auth/login");
+        redirect("/");
     }
 
     const resolvedParams = await params;

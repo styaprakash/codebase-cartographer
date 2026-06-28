@@ -1,30 +1,29 @@
 import { auth } from '@/auth'
 import { NextResponse } from 'next/server'
 
+const protectedPrefixes = ['/dashboard', '/setup', '/repo', '/indexing']
+
+function isProtectedRoute(pathname: string): boolean {
+    return protectedPrefixes.some(prefix => pathname.startsWith(prefix))
+}
+
 export default auth((req) => {
-    const isLoggedIn = !!req.auth
     const { pathname } = req.nextUrl
+    const isLoggedIn = !!req.auth
 
-    //Publuc routes: always accesible
-    const publicRoutes = ['/', '/auth/login', '/auth/error']
-    if(publicRoutes.includes(pathname)){
-        //If logged in and trying to visit landing page, send to dashboard
-        if(isLoggedIn && pathname === '/') {
-            return NextResponse.redirect(new URL('/dashboard', req.url))
-        }
-        return NextResponse.next()
-    } 
+    // If hitting landing page while logged in → send to dashboard
+    if (isLoggedIn && pathname === '/') {
+        return NextResponse.redirect(new URL('/dashboard', req.url))
+    }
 
-    //Protected route - redirects to login if not logged in
-    if(!isLoggedIn) {
-        return NextResponse.redirect(
-            new URL('/auth/login', req.url)
-        )
+    // If hitting a protected route while logged out → send to landing
+    if (!isLoggedIn && isProtectedRoute(pathname)) {
+        return NextResponse.redirect(new URL('/', req.url))
     }
 
     return NextResponse.next()
 })
 
 export const config = {
-    matcher: ['/((?!api|_next/static|_next/image|favicon.ico).*)'],
+    matcher: ['/dashboard/:path*', '/setup/:path*', '/repo/:path*', '/indexing/:path*', '/'],
 }

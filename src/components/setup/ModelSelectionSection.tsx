@@ -3,20 +3,12 @@
 import { AVAILABLE_MODELS } from '@/types'
 import ModelCard from './ModelCard'
 
-/**
- * ModelInformation — informational display of available embedding engines.
- *
- * Currently shows the active engine (Qwen3) and upcoming models as info cards.
- * No selection, no configuration.
- *
- * Future: Replace with <ModelSelector /> when multi-model support is ready.
- * The wrapping section layout and structure should remain compatible.
- */
+interface Props {
+    selectedModel: string
+    onSelectModel: (id: string) => void
+}
 
-export default function ModelInformation() {
-    const activeModel = AVAILABLE_MODELS.find(m => m.available)
-    const upcomingModels = AVAILABLE_MODELS.filter(m => !m.available)
-
+export default function ModelSelectionSection({ selectedModel, onSelectModel }: Props) {
     return (
         <div style={{
             background: 'rgba(17, 17, 24, 0.6)',
@@ -28,21 +20,18 @@ export default function ModelInformation() {
                 Embedding Engine
             </h3>
             <p style={{ fontSize: '13px', color: '#64748B', margin: '4px 0 16px 0' }}>
-                Your codebase will be processed using the Qwen3 Embedding model running locally through Ollama.
+                Choose how your codebase will be vectorized for semantic search.
             </p>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                {activeModel && <ModelCard model={activeModel} isPrimary />}
-                {upcomingModels.length > 0 && (
-                    <>
-                        <p style={{ fontSize: '12px', color: '#475569', margin: '8px 0 0 0', fontWeight: 500 }}>
-                            Additional models coming soon
-                        </p>
-                        {upcomingModels.map(m => (
-                            <ModelCard key={m.id} model={m} />
-                        ))}
-                    </>
-                )}
+                {AVAILABLE_MODELS.map(m => (
+                    <ModelCard
+                        key={m.id}
+                        model={m}
+                        isSelected={selectedModel === m.id}
+                        onSelect={onSelectModel}
+                    />
+                ))}
             </div>
         </div>
     )

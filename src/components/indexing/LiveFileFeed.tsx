@@ -87,9 +87,9 @@ function LiveFileFeed({ completedFiles, currentFile }: Props) {
                 padding: '4px',
             }}
         >
-            {entries.map(entry => (
+            {entries.map((entry, index) => (
                 <div
-                    key={entry.id}
+                    key={`${entry.id}-${index}`}
                     style={{
                         display: 'flex',
                         alignItems: 'center',

@@ -18,6 +18,7 @@ interface Props {
 export default function RepositorySetup({ repo }: Props) {
     const [loading, setLoading] = useState(false)
     const [error, setError] = useState<string | null>(null)
+    const [selectedModel, setSelectedModel] = useState<string>('OPENROUTER_QWEN_EMBEDDING')
     const router = useRouter()
 
     const handleStartIndexing = async () => {
@@ -35,7 +36,6 @@ export default function RepositorySetup({ repo }: Props) {
                     fullName: String(repo.full_name),
                     branch: String(repo.default_branch),
                     language: String(repo.language ?? 'Unknown'),
-                    embeddingModel: 'qwen3',
                 },
                 {
                     headers: {
@@ -48,7 +48,7 @@ export default function RepositorySetup({ repo }: Props) {
             try {
                 await axios.post(
                     `/api/proxy/repos/${created.id}/index`,
-                    {},
+                    { embeddingModel: selectedModel },
                     {
                         headers: {
                             Authorization: `Bearer ${token}`,
@@ -108,7 +108,10 @@ export default function RepositorySetup({ repo }: Props) {
                 <p style={{ fontSize: '12px', fontWeight: 600, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.08em', margin: 0 }}>
                     Step 2 · Engine
                 </p>
-                <ModelSelectionSection />
+                <ModelSelectionSection
+                    selectedModel={selectedModel}
+                    onSelectModel={setSelectedModel}
+                />
             </div>
 
             {/* 3. How It Works */}

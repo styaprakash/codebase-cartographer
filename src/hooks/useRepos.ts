@@ -1,13 +1,12 @@
-
-
 /* *****Fetchers***** */
 
 import { GithubRepo, BackendRepo, DashboardRepo } from "@/types";
 import axios from "axios";
+import api from "@/lib/api";
 import { useSession } from "next-auth/react";
 import useSWR from "swr";
 
-//Fetches All user repo from the Github API
+//Fetches All user repo from the Github API (external — uses raw axios)
 async function fetchGithubRepos(githubToken: string): Promise<GithubRepo[]> {
     const res = await axios.get(
     'https://api.github.com/user/repos',
@@ -26,16 +25,9 @@ async function fetchGithubRepos(githubToken: string): Promise<GithubRepo[]> {
 }
 
 
-//fetches indexed repos from backend
-async function fetchBackendRepos(backendToken: string): Promise<BackendRepo[]> {
-    const res = await axios.get(
-        `/api/proxy/repos`,
-        {
-            headers: {
-                Authorization: `Bearer ${backendToken}`,
-            }
-        }
-    )
+//fetches indexed repos from backend (uses api instance — interceptor handles 401)
+async function fetchBackendRepos(): Promise<BackendRepo[]> {
+    const res = await api.get(`/repos`)
     return res.data;
 }
 
@@ -73,26 +65,31 @@ interface ReposData {
 export function useRepos(){
     const { data:session } = useSession()
 
-    const githubToken = (session as any)?.githubAccessToken as 
+    const githubToken = (session as any)?.githubAccessToken as
         | string
         | undefined
 
-    const backendToken = (session as any)?.backendToken as
-        | string
-        | undefined
-
-    const key = githubToken && backendToken
-        ? ['repos', githubToken, backendToken]
+    const key = githubToken
+        ? ['repos', githubToken]
         : null
 
-    const { data, error, isLoading, mutate } = 
+    const { data, error, isLoading, mutate } =
         useSWR<ReposData>(
             key,
             async () => {
                 const [ghResult, backendResult] = await Promise.allSettled([
                     fetchGithubRepos(githubToken!),
-                    fetchBackendRepos(backendToken!)
+                    fetchBackendRepos(),
                 ])
+
+                // If the backend call failed with 401, re-throw to trigger
+                // the api interceptor's signOut + redirect flow.
+                if (backendResult.status === 'rejected') {
+                    const err = backendResult.reason
+                    if (axios.isAxiosError(err) && err.response?.status === 401) {
+                        throw err
+                    }
+                }
 
                 const githubRepos = ghResult.status === 'fulfilled'
                     ? ghResult.value

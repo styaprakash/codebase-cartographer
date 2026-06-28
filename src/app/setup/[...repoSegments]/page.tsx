@@ -8,7 +8,7 @@ interface PageProps {
 
 export default async function SetupPage({ params }: PageProps) {
     const session = await auth()
-    if (!session) redirect('/auth/login')
+    if (!session) redirect('/')
 
     const resolvedParams = await params
     // Join segments back to form owner/repo

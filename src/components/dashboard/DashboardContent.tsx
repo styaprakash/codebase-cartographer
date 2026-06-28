@@ -13,7 +13,7 @@ import DashboardFilterTabs, { type FilterTab } from './DashboardFilterTabs'
 import ImportRepoModal from './ImportRepoModal'
 import type { DashboardRepo, GithubRepo } from '@/types'
 import type { RepoCardProps } from './RepoCard'
-import { getSession } from 'next-auth/react';
+import { getSession, useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation'
 import axios from 'axios';
 
@@ -39,6 +39,7 @@ function saveOptimisticId(id: number) {
 }
 
 export default function DashboardContent() {
+    const { status } = useSession()
     const [query, setQuery] = useState('')
     const [showImportModal, setShowImportModal] = useState(false)
     const [activeTab, setActiveTab] = useState<FilterTab>('all')
@@ -93,6 +94,21 @@ export default function DashboardContent() {
         }
     }, [router])
 
+    const handleCardClick = useCallback((repo: DashboardRepo) => {
+        if (repo.backendId) {
+            if (repo.status === 'INDEXING') {
+                router.push(`/indexing/${repo.backendId}`)
+                return
+            }
+            if (repo.status === 'INDEXED') {
+                router.push(`/repo/${repo.backendId}`)
+                return
+            }
+        }
+        
+        router.push(`/setup/${repo.fullName}`)
+    }, [router])
+
     const handleImportFromModal = useCallback((githubRepo: GithubRepo) => {
         setShowImportModal(false)
         router.push(`/setup/${githubRepo.full_name}`)
@@ -123,9 +139,10 @@ export default function DashboardContent() {
                 repoId: repo.backendId ?? undefined,
                 branch: repo.branch,
                 onIndexClick: () => handleIndexRepo(repo),
+                onClick: () => handleCardClick(repo),
             }
         })
-    },[repos, optimisticIndexingIds, handleIndexRepo])
+    },[repos, optimisticIndexingIds, handleIndexRepo, handleCardClick])
 
     // Filter by search query
     const searched = useMemo(() => {
@@ -162,6 +179,10 @@ export default function DashboardContent() {
     }, [githubRepos, repos])
 
     const isEmpty = !isLoading && !error && repos.length === 0
+
+    // If session is invalid/expired, hide content while the interceptor
+    // completes signOut + redirect to landing page.
+    if (status === 'unauthenticated') return null
 
     return (
         <div style={{ position: 'relative', minHeight: '100vh', color: '#F1F5F9', overflowX: 'hidden' }}>
