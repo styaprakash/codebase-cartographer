@@ -15,7 +15,7 @@ interface FileTreeProps {
 export default function FileTree({ repoId, selectedPath, onSelectFile }: FileTreeProps) {
     const { files, isLoading, error } = useFileTree(repoId)
     const router = useRouter()
-    
+
     const handleReindex = () => {
         router.push(`/indexing/${repoId}`)
     }
@@ -56,11 +56,11 @@ export default function FileTree({ repoId, selectedPath, onSelectFile }: FileTre
                 ) : (
                     <div style={{ padding: '0 8px', display: 'flex', flexDirection: 'column', gap: '2px', fontSize: '12px' }}>
                         {files.map((node, i) => (
-                            <TreeNode 
-                                key={i} 
-                                node={node} 
-                                selectedPath={selectedPath} 
-                                onSelect={onSelectFile} 
+                            <TreeNode
+                                key={i}
+                                node={node}
+                                selectedPath={selectedPath}
+                                onSelect={onSelectFile}
                             />
                         ))}
                     </div>
@@ -69,7 +69,7 @@ export default function FileTree({ repoId, selectedPath, onSelectFile }: FileTre
 
             {/* Footer */}
             <div style={{ padding: '16px', borderTop: '1px solid #1E1E2E' }}>
-                <button 
+                <button
                     onClick={handleReindex}
                     style={{ fontSize: '10px', color: '#64748B', display: 'flex', alignItems: 'center', gap: '6px', transition: 'color 0.2s' }}
                     onMouseOver={(e) => e.currentTarget.style.color = '#F1F5F9'}
@@ -83,12 +83,12 @@ export default function FileTree({ repoId, selectedPath, onSelectFile }: FileTre
     )
 }
 
-function TreeNode({ 
-    node, 
-    selectedPath, 
-    onSelect, 
-    depth = 0 
-}: { 
+function TreeNode({
+    node,
+    selectedPath,
+    onSelect,
+    depth = 0
+}: {
     node: FileNode
     selectedPath: string | null
     onSelect: (path: string) => void
@@ -96,13 +96,13 @@ function TreeNode({
 }) {
     const [isOpen, setIsOpen] = useState(false)
     const isSelected = selectedPath === node.path
-    
+
     const isDir = node.type === 'directory' || !!node.children
 
     if (isDir) {
         return (
             <div>
-                <div 
+                <div
                     style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: `6px 8px 6px ${depth * 12 + 8}px`, color: '#64748B', borderRadius: '4px', cursor: 'pointer', transition: 'background-color 0.2s' }}
                     onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#111118'}
                     onMouseOut={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
@@ -115,12 +115,12 @@ function TreeNode({
                 {isOpen && node.children && (
                     <div>
                         {node.children.map((child, i) => (
-                            <TreeNode 
-                                key={i} 
-                                node={child} 
-                                selectedPath={selectedPath} 
-                                onSelect={onSelect} 
-                                depth={depth + 1} 
+                            <TreeNode
+                                key={i}
+                                node={child}
+                                selectedPath={selectedPath}
+                                onSelect={onSelect}
+                                depth={depth + 1}
                             />
                         ))}
                     </div>
@@ -130,13 +130,13 @@ function TreeNode({
     }
 
     return (
-        <div 
-            style={{ 
-                display: 'flex', 
-                alignItems: 'center', 
-                justifyContent: 'space-between', 
-                padding: `6px 8px 6px ${depth * 12 + (isSelected ? 6 : 8)}px`, 
-                borderRadius: '4px', 
+        <div
+            style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                padding: `6px 8px 6px ${depth * 12 + (isSelected ? 6 : 8)}px`,
+                borderRadius: '4px',
                 cursor: 'pointer',
                 backgroundColor: isSelected ? 'rgba(99, 102, 241, 0.1)' : 'transparent',
                 color: isSelected ? '#818CF8' : '#64748B',
@@ -163,14 +163,14 @@ function TreeNode({
                 <FileCode size={14} />
                 <span>{node.name}</span>
             </div>
-            <div 
+            <div
                 className="file-dot"
-                style={{ 
-                    width: '6px', 
-                    height: '6px', 
-                    borderRadius: '50%', 
+                style={{
+                    width: '6px',
+                    height: '6px',
+                    borderRadius: '50%',
                     backgroundColor: isSelected ? '#6366F1' : '#1E1E2E',
-                    transition: 'background-color 0.2s' 
+                    transition: 'background-color 0.2s'
                 }}
             ></div>
         </div>

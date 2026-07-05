@@ -1,46 +1,46 @@
 //Github API repo shape
 export interface GithubRepo {
-    id: number
-    name: string
-    full_name: string
-    description: string | null
-    language: string | null
-    default_branch: string
-    private: boolean
-    updated_at: string
+  id: number
+  name: string
+  full_name: string
+  description: string | null
+  language: string | null
+  default_branch: string
+  private: boolean
+  updated_at: string
 }
 
 //Our backend repo shape
-export interface BackendRepo{
-    id: string
-    userId: string
-    githubRepoId: string
-    name: string
-    fullName: string
-    branch: string
-    language:string | null
-    status: 'PENDING' | 'INDEXING' | 'INDEXED' | 'FAILED'
-    totalFiles: number
-    indexedFiles: number
-    errorMessage: string | null
-    indexedAt: string | null
-    createdAt: string
+export interface BackendRepo {
+  id: string
+  userId: string
+  githubRepoId: string
+  name: string
+  fullName: string
+  branch: string
+  language: string | null
+  status: 'PENDING' | 'INDEXING' | 'INDEXED' | 'FAILED'
+  totalFiles: number
+  indexedFiles: number
+  errorMessage: string | null
+  indexedAt: string | null
+  createdAt: string
 }
 
 
 //Merged shape for UI
 export interface DashboardRepo {
-    githubId: number
-    backendId: string | null
-    name: string
-    fullName: string
-    description: string
-    language: string | null
-    branch: string
-    status: 'INDEXED' | 'INDEXING' | 'PENDING' | 'FAILED' | 'NOT_INDEXED'
-    totalFiles: number
-    indexedFiles: number
-    errorMessage: string | null   
+  githubId: number
+  backendId: string | null
+  name: string
+  fullName: string
+  description: string
+  language: string | null
+  branch: string
+  status: 'INDEXED' | 'INDEXING' | 'PENDING' | 'FAILED' | 'NOT_INDEXED'
+  totalFiles: number
+  indexedFiles: number
+  errorMessage: string | null
 }
 
 // ── Embedding Models ────────────────────────────────
@@ -49,16 +49,16 @@ export type EmbeddingModel = 'OPENROUTER_QWEN_EMBEDDING' | 'GEMINI_EMBEDDING' | 
 export type BrandTheme = 'qwen' | 'gemini'
 
 export interface ModelInfo {
-    id: EmbeddingModel
-    name: string
-    description: string
-    brandTheme: BrandTheme
+  id: EmbeddingModel
+  name: string
+  description: string
+  brandTheme: BrandTheme
 }
 
 export const AVAILABLE_MODELS: ModelInfo[] = [
-    { id: 'OPENROUTER_QWEN_EMBEDDING', name: 'OpenRouter (Qwen3 8B)', description: 'Blazing fast cloud embeddings.', brandTheme: 'qwen' },
-    { id: 'GEMINI_EMBEDDING', name: 'Google Gemini', description: "Strong semantic understanding using Gemini's text-embedding-004.", brandTheme: 'gemini' },
-    { id: 'QWEN3_EMBEDDING', name: 'Local Qwen3 (Ollama)', description: 'Runs entirely locally on your hardware. Requires GPU.', brandTheme: 'qwen' },
+  { id: 'OPENROUTER_QWEN_EMBEDDING', name: 'OpenRouter (Qwen3 8B)', description: 'Blazing fast cloud embeddings.', brandTheme: 'qwen' },
+  { id: 'GEMINI_EMBEDDING', name: 'Google Gemini', description: "Strong semantic understanding using Gemini's text-embedding-004.", brandTheme: 'gemini' },
+  { id: 'QWEN3_EMBEDDING', name: 'Local Qwen3 (Ollama)', description: 'Runs entirely locally on your hardware. Requires GPU.', brandTheme: 'qwen' },
 ]
 
 // ── File Tree Types ──────────────────────────────────

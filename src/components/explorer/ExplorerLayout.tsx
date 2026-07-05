@@ -35,17 +35,17 @@ export default function ExplorerLayout({ repoId }: ExplorerLayoutProps) {
     return (
         <div style={{ display: 'flex', height: '100vh', width: '100%', overflow: 'hidden', backgroundColor: '#0A0A0F' }}>
             {/* Left Sidebar - File Tree */}
-            <FileTree 
-                repoId={repoId} 
-                selectedPath={selectedPath} 
-                onSelectFile={handleSelectFile} 
+            <FileTree
+                repoId={repoId}
+                selectedPath={selectedPath}
+                onSelectFile={handleSelectFile}
             />
 
             {/* Main Content Area */}
             <main style={{ flex: 1, display: 'flex', flexDirection: 'column', backgroundColor: '#0A0A0F', position: 'relative' }}>
                 {/* Tab Bar */}
                 <nav style={{ display: 'flex', alignItems: 'center', padding: '0 16px', borderBottom: '1px solid #1E1E2E', backgroundColor: '#0A0A0F', height: '48px', gap: '24px' }}>
-                    <button 
+                    <button
                         onClick={() => setActiveTab('ask-ai')}
                         style={{
                             height: '100%',
@@ -63,7 +63,7 @@ export default function ExplorerLayout({ repoId }: ExplorerLayoutProps) {
                         <MessageSquare size={16} />
                         Ask AI
                     </button>
-                    <button 
+                    <button
                         onClick={() => setActiveTab('dep-map')}
                         style={{
                             height: '100%',
@@ -86,26 +86,26 @@ export default function ExplorerLayout({ repoId }: ExplorerLayoutProps) {
                 {/* Tab Content */}
                 <div style={{ flex: 1, overflow: 'hidden', position: 'relative' }}>
                     {activeTab === 'ask-ai' && (
-                        <ChatPanel 
-                            repoId={repoId} 
-                            onFileReference={handleSelectFile} 
+                        <ChatPanel
+                            repoId={repoId}
+                            onFileReference={handleSelectFile}
                         />
                     )}
                     {activeTab === 'dep-map' && (
-                        <DependencyMap 
-                            repoId={repoId} 
-                            selectedNodeId={selectedNode} 
-                            onSelectNode={handleSelectNode} 
+                        <DependencyMap
+                            repoId={repoId}
+                            selectedNodeId={selectedNode}
+                            onSelectNode={handleSelectNode}
                         />
                     )}
                 </div>
             </main>
 
             {/* Right Panel - Details */}
-            <DetailsPanel 
-                repoId={repoId} 
-                selectedPath={selectedPath || selectedNode} 
-                onAskAbout={handleAskAbout} 
+            <DetailsPanel
+                repoId={repoId}
+                selectedPath={selectedPath || selectedNode}
+                onAskAbout={handleAskAbout}
             />
         </div>
     )

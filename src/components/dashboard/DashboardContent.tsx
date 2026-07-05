@@ -13,9 +13,8 @@ import DashboardFilterTabs, { type FilterTab } from './DashboardFilterTabs'
 import ImportRepoModal from './ImportRepoModal'
 import type { DashboardRepo, GithubRepo } from '@/types'
 import type { RepoCardProps } from './RepoCard'
-import { getSession, useSession } from 'next-auth/react';
+import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation'
-import axios from 'axios';
 
 const STORAGE_KEY = 'optimistic-indexing-ids'
 const STALE_MS = 5 * 60 * 1000
@@ -52,9 +51,6 @@ export default function DashboardContent() {
 
     const handleIndexRepo = useCallback(async (repo: DashboardRepo) => {
         try {
-            const session = await getSession()
-            const token = (session as any)?.backendToken
-
             if (repo.backendId) {
                 if (repo.status === 'INDEXING') {
                     router.push(`/indexing/${repo.backendId}`)
@@ -64,30 +60,14 @@ export default function DashboardContent() {
                     router.push(`/repo/${repo.backendId}`)
                     return
                 }
-                try {
-                    // FAILED — retry index with current GitHub metadata
-                    await axios.post(
-                        `/api/proxy/repos/${repo.backendId}/index`,
-                        {
-                            name: repo.name,
-                            fullName: repo.fullName,
-                            branch: repo.branch,
-                            language: repo.language,
-                        },
-                        { headers: { Authorization: `Bearer ${token}` } }
-                    )
-                } catch (innerErr) {
-                    if (axios.isAxiosError(innerErr) && innerErr.response?.status === 409) {
-                        console.warn('Indexing already in progress (409). Proceeding to SSE stream.')
-                    } else {
-                        throw innerErr
-                    }
+                if (repo.status === 'FAILED') {
+                    // Navigate to setup page so user can choose a new embedding provider
+                    router.push(`/setup/${repo.fullName}`)
+                    return
                 }
-                router.push(`/indexing/${repo.backendId}`)
-                return
             }
 
-            // No backendId — navigate to setup page
+            // No backendId or NOT_INDEXED — navigate to setup page
             router.push(`/setup/${repo.fullName}`)
         } catch(err){
             console.error('Failed to start indexing: ', err);
