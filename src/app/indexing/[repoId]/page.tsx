@@ -16,10 +16,11 @@ export default function IndexingPage() {
     }
     const authToken = session?.backendToken
 
+    const { state, reconnect } = useIndexingStream(repoId, authToken, sessionStatus)
     const {
         status, totalFiles, indexedFiles, percentage,
         currentFile, completedFiles, errorMessage, repoName,
-    } = useIndexingStream(repoId, authToken, sessionStatus)
+    } = state
 
     const isDone = status === 'INDEXED'
 
@@ -54,6 +55,7 @@ export default function IndexingPage() {
                     completedFiles={completedFiles}
                     errorMessage={errorMessage}
                     repoId={repoId}
+                    reconnect={reconnect}
                 />
             </div>
         </div>

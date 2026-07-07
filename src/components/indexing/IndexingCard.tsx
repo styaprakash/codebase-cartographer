@@ -21,6 +21,7 @@ interface Props {
     completedFiles: string[]
     errorMessage: string | null
     repoId: string
+    reconnect: () => void
 }
 
 const PIPELINE_PHASES = [
@@ -41,6 +42,7 @@ function IndexingCard({
     completedFiles,
     errorMessage,
     repoId,
+    reconnect,
 }: Props) {
     const router = useRouter()
     const searchParams = useSearchParams()
@@ -111,7 +113,7 @@ function IndexingCard({
                     throw innerErr
                 }
             }
-            window.location.reload()
+            reconnect()
         } catch (err) {
             console.error('Retry failed:', err)
         } finally {

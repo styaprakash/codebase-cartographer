@@ -54,8 +54,11 @@ export function useIndexingStream(
     repoId: string,
     authToken: string | undefined,
     sessionStatus: 'loading' | 'authenticated' | 'unauthenticated' = 'authenticated',
-): IndexingStreamState {
+): { state: IndexingStreamState; reconnect: () => void } {
     const [state, setState] = useState<IndexingStreamState>(INITIAL_STATE)
+    const [retryCount, setRetryCount] = useState(0)
+
+    const reconnect = () => setRetryCount(c => c + 1)
 
     // ── Refs: mutable values that do NOT trigger re-renders ──
     const abortControllerRef = useRef<AbortController | null>(null)
@@ -71,12 +74,14 @@ export function useIndexingStream(
     useEffect(() => { authTokenRef.current = authToken }, [authToken])
     useEffect(() => { sessionStatusRef.current = sessionStatus }, [sessionStatus])
 
-    // ── The single, stable connection effect ──
-    // Only depends on repoId — the ONLY value that should tear down
-    // and rebuild the SSE connection.
+    // ── The connection effect ──
+    // Rebuilds when repoId changes OR when reconnect() is called (retryCount increments).
     useEffect(() => {
         mountedRef.current = true
         isTerminalRef.current = false
+
+        // Reset state so the UI clears old error messages and completed files
+        setState(INITIAL_STATE)
 
         if (!repoId) return
 
@@ -239,7 +244,7 @@ export function useIndexingStream(
             }
         }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [repoId])
+    }, [repoId, retryCount])
 
-    return state
+    return { state, reconnect }
 }
