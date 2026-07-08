@@ -19,7 +19,7 @@ export function useChat(repoId: string) {
     );
 
     const sendMessage = async (question: string, llmProvider?: string) => {
-        const provider = llmProvider || 'DEEPSEEK_V4';
+        const provider = llmProvider || 'OPENROUTER_DEEPSEEK_V4_PRO';
         const res = await querApi.ask(repoId, question, provider);
         mutate(); // Re-fetch history after sending
         return res.data;

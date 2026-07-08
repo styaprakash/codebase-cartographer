@@ -3,14 +3,7 @@
 import { useState, useRef, useEffect } from 'react'
 import { ShieldCheck, Database, CreditCard, Zap, Bot, User, FileCode, AlertTriangle, Send, Loader2 } from 'lucide-react'
 import { useChat } from '@/hooks/useChat'
-
-const LLM_OPTIONS = [
-    { value: 'DEEPSEEK_V4', label: 'DeepSeek V4' },
-    { value: 'OLLAMA_LLAMA3', label: 'Llama 3 (Local)' },
-    { value: 'OLLAMA_DEEPSEEK_CODER', label: 'DeepSeek Coder (Local)' },
-    { value: 'OPENAI_GPT4', label: 'GPT-4o' },
-    { value: 'GEMINI_1_5_FLASH', label: 'Gemini 1.5 Flash' },
-]
+import { ChatMessage } from '@/types'
 
 interface ChatPanelProps {
     repoId: string
@@ -18,28 +11,51 @@ interface ChatPanelProps {
 }
 
 export default function ChatPanel({ repoId, onFileReference }: ChatPanelProps) {
-    const { messages, isLoading, sendMessage } = useChat(repoId)
+    const { sendMessage } = useChat(repoId)
     const [input, setInput] = useState('')
-    const [isSending, setIsSending] = useState(false)
-    const [selectedLlm, setSelectedLlm] = useState<string>('DEEPSEEK_V4')
+    const [localMessages, setLocalMessages] = useState<ChatMessage[]>([])
+    const [isThinking, setIsThinking] = useState(false)
+    const [selectedLlm, setSelectedLlm] = useState<string>('OPENROUTER_DEEPSEEK_V4_PRO')
     const messagesEndRef = useRef<HTMLDivElement>(null)
 
-    const showOnboarding = messages.length === 0
+    const showOnboarding = localMessages.length === 0 && !isThinking
 
     const handleSend = async () => {
-        if (!input.trim() || isSending) return
+        if (!input.trim() || isThinking) return
 
-        setIsSending(true)
         const currentInput = input
         setInput('')
+        setIsThinking(true)
+
+        const userMessage: ChatMessage = {
+            id: Date.now().toString(),
+            role: 'user',
+            content: currentInput,
+            timestamp: new Date().toISOString(),
+        }
+        setLocalMessages(prev => [...prev, userMessage])
 
         try {
-            await sendMessage(currentInput, selectedLlm)
+            const res = await sendMessage(currentInput, selectedLlm)
+            const assistantMessage: ChatMessage = {
+                id: (Date.now() + 1).toString(),
+                role: 'assistant',
+                content: res.answer,
+                citations: res.citations,
+                timestamp: new Date().toISOString(),
+            }
+            setLocalMessages(prev => [...prev, assistantMessage])
         } catch (error) {
             console.error("Failed to send message:", error)
-            setInput(currentInput) // restore input on failure
+            const errorMessage: ChatMessage = {
+                id: (Date.now() + 1).toString(),
+                role: 'assistant',
+                content: 'Sorry, something went wrong. Please try again.',
+                timestamp: new Date().toISOString(),
+            }
+            setLocalMessages(prev => [...prev, errorMessage])
         } finally {
-            setIsSending(false)
+            setIsThinking(false)
         }
     }
 
@@ -52,13 +68,13 @@ export default function ChatPanel({ repoId, onFileReference }: ChatPanelProps) {
     // Auto-scroll to bottom
     useEffect(() => {
         messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
-    }, [messages, isSending])
+    }, [localMessages, isThinking])
 
     return (
         <div id="ask-ai-view" style={{ display: 'flex', flexDirection: 'column', height: '100%', position: 'relative', backgroundColor: '#0A0A0F' }}>
             <div id="chat-history" className="custom-scrollbar" style={{ flex: 1, overflowY: 'auto', padding: '24px', display: 'flex', flexDirection: 'column', gap: '24px' }}>
 
-                {showOnboarding && !isSending && (
+                {showOnboarding && (
                     <div id="onboarding-chips" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '40px 0' }}>
                         <h3 style={{ fontSize: '18px', fontWeight: 600, marginBottom: '24px', color: '#818CF8' }}>How can I help you today?</h3>
                         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: '12px', width: '100%', maxWidth: '576px' }}>
@@ -98,7 +114,7 @@ export default function ChatPanel({ repoId, onFileReference }: ChatPanelProps) {
                     </div>
                 )}
 
-                {messages.map((msg) => (
+                {localMessages.map((msg) => (
                     <div
                         key={msg.id}
                         style={{ display: 'flex', alignItems: 'flex-start', gap: '16px', justifyContent: msg.role === 'user' ? 'flex-end' : 'flex-start', maxWidth: msg.role === 'user' ? '100%' : '896px' }}
@@ -114,19 +130,19 @@ export default function ChatPanel({ repoId, onFileReference }: ChatPanelProps) {
                                 <p style={{ whiteSpace: 'pre-wrap', margin: 0 }}>{msg.content}</p>
                             </div>
 
-                            {msg.role === 'assistant' && msg.sources && msg.sources.length > 0 && (
+                            {msg.role === 'assistant' && msg.citations && msg.citations.length > 0 && (
                                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', fontSize: '12px' }}>
                                     <span style={{ fontSize: '10px', color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.1em', fontWeight: 'bold', paddingTop: '6px' }}>Sources:</span>
-                                    {msg.sources.map((source, idx) => (
+                                    {msg.citations.map((source, idx) => (
                                         <button
                                             key={idx}
-                                            onClick={() => onFileReference?.(source.filePath)}
+                                            onClick={() => onFileReference?.(source)}
                                             style={{ padding: '4px 8px', borderRadius: '4px', backgroundColor: '#1E1E2E', border: '1px solid transparent', color: '#64748B', display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer', transition: 'all 0.2s' }}
                                             onMouseOver={(e) => { e.currentTarget.style.borderColor = 'rgba(99, 102, 241, 0.5)'; e.currentTarget.style.color = '#F1F5F9'; }}
                                             onMouseOut={(e) => { e.currentTarget.style.borderColor = 'transparent'; e.currentTarget.style.color = '#64748B'; }}
                                         >
                                             <FileCode size={12} />
-                                            {source.label || source.filePath.split('/').pop()}
+                                            {source.split('/').pop()}
                                         </button>
                                     ))}
                                 </div>
@@ -141,7 +157,7 @@ export default function ChatPanel({ repoId, onFileReference }: ChatPanelProps) {
                     </div>
                 ))}
 
-                {isSending && (
+                {isThinking && (
                     <div style={{ display: 'flex', alignItems: 'flex-start', gap: '16px', maxWidth: '896px' }}>
                         <div style={{ width: '32px', height: '32px', borderRadius: '8px', backgroundColor: 'rgba(99, 102, 241, 0.2)', border: '1px solid rgba(99, 102, 241, 0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, color: '#818CF8' }}>
                             <Bot size={18} />
@@ -172,9 +188,30 @@ export default function ChatPanel({ repoId, onFileReference }: ChatPanelProps) {
                         onChange={(e) => setSelectedLlm(e.target.value)}
                         style={{ backgroundColor: '#111118', border: '1px solid #1E1E2E', borderRadius: '6px', padding: '4px 8px', fontSize: '11px', color: '#F1F5F9', outline: 'none', cursor: 'pointer' }}
                     >
-                        {LLM_OPTIONS.map((opt) => (
-                            <option key={opt.value} value={opt.value}>{opt.label}</option>
-                        ))}
+                        <optgroup label="Google AI Studio (Free Tier)">
+                            <option value="GEMINI_1_5_FLASH">Gemini 1.5 Flash</option>
+                            <option value="GEMINI_3_5_FLASH">Gemini 3.5 Flash</option>
+                            <option value="GEMINI_2_5_FLASH">Gemini 2.5 Flash</option>
+                            <option value="GEMINI_2_0_FLASH">Gemini 2.0 Flash</option>
+                            <option value="GEMINI_2_5_FLASH_LITE">Gemini 2.5 Flash Lite</option>
+                            <option value="GEMINI_3_1_FLASH_LITE_PREVIEW">Gemini 3.1 Flash Lite Preview</option>
+                        </optgroup>
+                        <optgroup label="Nvidia API">
+                            <option value="NVIDIA_GLM_5_2">GLM 5.2 (Nvidia)</option>
+                        </optgroup>
+                        <optgroup label="Local Hardware (Ollama)">
+                            <option value="OLLAMA_LLAMA3">Llama 3</option>
+                            <option value="OLLAMA_LLAMA3_1">Llama 3.1</option>
+                            <option value="OLLAMA_QWEN2_5">Qwen 2.5</option>
+                            <option value="OLLAMA_DEEPSEEK_CODER">DeepSeek Coder</option>
+                            <option value="OLLAMA_GEMMA_4_E4B">Gemma 4 E4B</option>
+                        </optgroup>
+                        <optgroup label="OpenRouter (Cloud)">
+                            <option value="OPENROUTER_DEEPSEEK_V4_PRO">DeepSeek V4 Pro</option>
+                            <option value="OPENROUTER_DEEPSEEK_V4_FLASH">DeepSeek V4 Flash</option>
+                            <option value="OPENROUTER_GLM_5_2">GLM 5.2</option>
+                            <option value="OPENROUTER_QWEN_3">Qwen 3</option>
+                        </optgroup>
                     </select>
                 </div>
 
@@ -188,16 +225,16 @@ export default function ChatPanel({ repoId, onFileReference }: ChatPanelProps) {
                         style={{ width: '100%', backgroundColor: '#111118', border: '1px solid #1E1E2E', borderRadius: '12px', padding: '16px 96px 16px 16px', fontSize: '14px', outline: 'none', transition: 'border-color 0.2s', color: '#F1F5F9' }}
                         onFocus={(e) => e.target.style.borderColor = '#6366F1'}
                         onBlur={(e) => e.target.style.borderColor = '#1E1E2E'}
-                        disabled={isSending || isLoading}
+                        disabled={isThinking}
                     />
                     <div style={{ position: 'absolute', right: '12px', display: 'flex', alignItems: 'center', gap: '12px' }}>
                         <span style={{ fontSize: '10px', color: '#64748B', backgroundColor: '#1E1E2E', padding: '2px 6px', borderRadius: '4px', fontWeight: 500 }}>⌘ Enter</span>
                         <button
                             onClick={handleSend}
-                            disabled={!input.trim() || isSending || isLoading}
-                            style={{ width: '32px', height: '32px', borderRadius: '8px', backgroundColor: (!input.trim() || isSending || isLoading) ? 'rgba(99, 102, 241, 0.5)' : '#4F46E5', color: '#ffffff', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: (!input.trim() || isSending || isLoading) ? 'not-allowed' : 'pointer', border: 'none' }}
+                            disabled={!input.trim() || isThinking}
+                            style={{ width: '32px', height: '32px', borderRadius: '8px', backgroundColor: (!input.trim() || isThinking) ? 'rgba(99, 102, 241, 0.5)' : '#4F46E5', color: '#ffffff', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: (!input.trim() || isThinking) ? 'not-allowed' : 'pointer', border: 'none' }}
                         >
-                            {isSending ? <Loader2 size={16} style={{ animation: 'spin 1s linear infinite' }} /> : <Send size={16} />}
+                            {isThinking ? <Loader2 size={16} style={{ animation: 'spin 1s linear infinite' }} /> : <Send size={16} />}
                         </button>
                     </div>
                 </div>
