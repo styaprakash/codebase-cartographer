@@ -4,6 +4,14 @@ import { useState, useRef, useEffect } from 'react'
 import { ShieldCheck, Database, CreditCard, Zap, Bot, User, FileCode, AlertTriangle, Send, Loader2 } from 'lucide-react'
 import { useChat } from '@/hooks/useChat'
 
+const LLM_OPTIONS = [
+    { value: 'DEEPSEEK_V4', label: 'DeepSeek V4' },
+    { value: 'OLLAMA_LLAMA3', label: 'Llama 3 (Local)' },
+    { value: 'OLLAMA_DEEPSEEK_CODER', label: 'DeepSeek Coder (Local)' },
+    { value: 'OPENAI_GPT4', label: 'GPT-4o' },
+    { value: 'GEMINI_1_5_FLASH', label: 'Gemini 1.5 Flash' },
+]
+
 interface ChatPanelProps {
     repoId: string
     onFileReference?: (path: string) => void
@@ -13,6 +21,7 @@ export default function ChatPanel({ repoId, onFileReference }: ChatPanelProps) {
     const { messages, isLoading, sendMessage } = useChat(repoId)
     const [input, setInput] = useState('')
     const [isSending, setIsSending] = useState(false)
+    const [selectedLlm, setSelectedLlm] = useState<string>('DEEPSEEK_V4')
     const messagesEndRef = useRef<HTMLDivElement>(null)
 
     const showOnboarding = messages.length === 0
@@ -25,7 +34,7 @@ export default function ChatPanel({ repoId, onFileReference }: ChatPanelProps) {
         setInput('')
 
         try {
-            await sendMessage(currentInput)
+            await sendMessage(currentInput, selectedLlm)
         } catch (error) {
             console.error("Failed to send message:", error)
             setInput(currentInput) // restore input on failure
@@ -154,6 +163,19 @@ export default function ChatPanel({ repoId, onFileReference }: ChatPanelProps) {
                         You've used 15 of your 20 free daily queries.
                     </span>
                     <span style={{ color: 'rgba(234, 179, 8, 0.6)' }}>Resets at midnight</span>
+                </div>
+
+                <div style={{ marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <span style={{ fontSize: '10px', color: '#64748B', fontWeight: 500 }}>Model:</span>
+                    <select
+                        value={selectedLlm}
+                        onChange={(e) => setSelectedLlm(e.target.value)}
+                        style={{ backgroundColor: '#111118', border: '1px solid #1E1E2E', borderRadius: '6px', padding: '4px 8px', fontSize: '11px', color: '#F1F5F9', outline: 'none', cursor: 'pointer' }}
+                    >
+                        {LLM_OPTIONS.map((opt) => (
+                            <option key={opt.value} value={opt.value}>{opt.label}</option>
+                        ))}
+                    </select>
                 </div>
 
                 <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>

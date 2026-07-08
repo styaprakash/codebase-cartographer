@@ -18,9 +18,9 @@ export function useChat(repoId: string) {
         }
     );
 
-    const sendMessage = async (question: string, llmProvider: string) => {
-        // Optimistic update could be added here
-        const res = await querApi.ask(repoId, question, llmProvider);
+    const sendMessage = async (question: string, llmProvider?: string) => {
+        const provider = llmProvider || 'DEEPSEEK_V4';
+        const res = await querApi.ask(repoId, question, provider);
         mutate(); // Re-fetch history after sending
         return res.data;
     };
