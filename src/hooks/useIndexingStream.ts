@@ -131,6 +131,12 @@ export function useIndexingStream(
                         return
                     }
 
+                    if (event.event === 'blink') {
+                        // Silently ignore the heartbeat to prevent AWS connection drops
+                        // console.debug("Blink heartbeat received: ", event.data);
+                        return
+                    }
+
                     try {
                         if (event.event === 'progress') {
                             const data: ProgressPayload = JSON.parse(event.data)

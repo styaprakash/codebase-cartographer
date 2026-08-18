@@ -7,11 +7,12 @@ import { ChatMessage } from '@/types'
 
 interface ChatPanelProps {
     repoId: string
+    llmProvider: string
     onFileReference?: (path: string) => void
 }
 
-export default function ChatPanel({ repoId, onFileReference }: ChatPanelProps) {
-    const { sendMessage } = useChat(repoId)
+export default function ChatPanel({ repoId, llmProvider, onFileReference }: ChatPanelProps) {
+    const { messages, isLoading, sendMessage } = useChat(repoId)
     const [input, setInput] = useState('')
     const [localMessages, setLocalMessages] = useState<ChatMessage[]>([])
     const [isThinking, setIsThinking] = useState(false)
@@ -36,15 +37,7 @@ export default function ChatPanel({ repoId, onFileReference }: ChatPanelProps) {
         setLocalMessages(prev => [...prev, userMessage])
 
         try {
-            const res = await sendMessage(currentInput, selectedLlm)
-            const assistantMessage: ChatMessage = {
-                id: (Date.now() + 1).toString(),
-                role: 'assistant',
-                content: res.answer,
-                citations: res.citations,
-                timestamp: new Date().toISOString(),
-            }
-            setLocalMessages(prev => [...prev, assistantMessage])
+            await sendMessage(currentInput, llmProvider)
         } catch (error) {
             console.error("Failed to send message:", error)
             const errorMessage: ChatMessage = {

@@ -2,36 +2,40 @@
 
 import { useState } from 'react'
 import { ChevronDown, ChevronRight, Folder, FileCode, RefreshCw, Box } from 'lucide-react'
-import { useFileTree } from '@/hooks/useFileTree'
-import { FileNode } from '@/types'
+import { FileNode, BackendRepo } from '@/types'
 import { useRouter } from 'next/navigation'
 
 interface FileTreeProps {
-    repoId: string
+    repository: BackendRepo | null
+    files: FileNode[]
+    isLoading: boolean
     selectedPath: string | null
     onSelectFile: (path: string) => void
 }
 
-export default function FileTree({ repoId, selectedPath, onSelectFile }: FileTreeProps) {
-    const { files, isLoading, error } = useFileTree(repoId)
+export default function FileTree({ repository, files, isLoading, selectedPath, onSelectFile }: FileTreeProps) {
     const router = useRouter()
 
     const handleReindex = () => {
-        router.push(`/indexing/${repoId}`)
+        if (repository) {
+            router.push(`/indexing/${repository.id}`)
+        }
     }
 
     return (
-        <aside style={{ width: '240px', display: 'flex', flexDirection: 'column', borderRight: '1px solid #1E1E2E', backgroundColor: '#0A0A0F', zIndex: 10 }}>
+        <aside style={{ width: '240px', display: 'flex', flexDirection: 'column', borderRight: '1px solid #1E1E2E', backgroundColor: '#0A0A0F', zIndex: 10, height: '100%' }}>
             {/* Header */}
             <div style={{ padding: '16px', borderBottom: '1px solid #1E1E2E' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
                     <div style={{ width: '24px', height: '24px', borderRadius: '4px', background: 'linear-gradient(to bottom right, #6366F1, #06B6D4)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                         <Box size={14} color="#ffffff" />
                     </div>
-                    <span style={{ fontWeight: 'bold', fontSize: '14px', letterSpacing: '-0.025em', color: '#F1F5F9' }}>Repository</span>
+                    <span style={{ fontWeight: 'bold', fontSize: '14px', letterSpacing: '-0.025em', color: '#F1F5F9' }}>
+                        {repository?.name ?? 'Repository'}
+                    </span>
                 </div>
                 <button style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '6px 12px', backgroundColor: '#111118', border: '1px solid #1E1E2E', borderRadius: '4px', fontSize: '12px', color: '#64748B' }}>
-                    <span>main</span>
+                    <span>{repository?.branch ?? 'main'}</span>
                     <ChevronDown size={14} />
                 </button>
             </div>
@@ -44,10 +48,6 @@ export default function FileTree({ repoId, selectedPath, onSelectFile }: FileTre
                         <div className="cc-skeleton" style={{ height: '16px', backgroundColor: '#1E1E2E', borderRadius: '4px', width: '50%', marginLeft: '16px' }}></div>
                         <div className="cc-skeleton" style={{ height: '16px', backgroundColor: '#1E1E2E', borderRadius: '4px', width: '66%', marginLeft: '16px' }}></div>
                         <div className="cc-skeleton" style={{ height: '16px', backgroundColor: '#1E1E2E', borderRadius: '4px', width: '83%' }}></div>
-                    </div>
-                ) : error ? (
-                    <div style={{ padding: '16px', fontSize: '12px', color: '#F87171' }}>
-                        Failed to load file tree.
                     </div>
                 ) : files.length === 0 ? (
                     <div style={{ padding: '16px', fontSize: '12px', color: '#64748B' }}>

@@ -24,10 +24,11 @@ const fetchModuleDetails = async (pathOrId: string): Promise<ModuleDetails> => {
 interface DetailsPanelProps {
     repoId: string
     selectedPath: string | null
+    isVisible: boolean
     onAskAbout: (moduleName: string) => void
 }
 
-export default function DetailsPanel({ repoId, selectedPath, onAskAbout }: DetailsPanelProps) {
+export default function DetailsPanel({ repoId, selectedPath, isVisible, onAskAbout }: DetailsPanelProps) {
     const [details, setDetails] = useState<ModuleDetails | null>(null)
     const [isLoading, setIsLoading] = useState(false)
 
@@ -53,7 +54,7 @@ export default function DetailsPanel({ repoId, selectedPath, onAskAbout }: Detai
     }, [selectedPath])
 
     return (
-        <aside style={{ width: '300px', display: 'flex', flexDirection: 'column', borderLeft: '1px solid #1E1E2E', backgroundColor: '#0A0A0F', zIndex: 10 }}>
+        <aside style={{ width: '300px', display: 'flex', flexDirection: 'column', borderLeft: '1px solid #1E1E2E', backgroundColor: '#0A0A0F', zIndex: 10, height: '100%' }}>
             <div style={{ padding: '16px', borderBottom: '1px solid #1E1E2E', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                 <h2 style={{ fontSize: '12px', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '0.05em', color: '#64748B', margin: 0 }}>Details</h2>
                 <MoreHorizontal size={16} color="#64748B" style={{ cursor: 'pointer', transition: 'color 0.2s' }} onMouseOver={(e) => e.currentTarget.style.color = '#F1F5F9'} onMouseOut={(e) => e.currentTarget.style.color = '#64748B'} />
