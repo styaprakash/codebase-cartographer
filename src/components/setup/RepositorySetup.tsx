@@ -1,11 +1,12 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import axios from 'axios'
 import { getSession } from 'next-auth/react'
 import { ArrowRight, Loader2 } from 'lucide-react'
 import type { GithubRepo } from '@/types'
+import { AVAILABLE_MODELS } from '@/types'
 import RepoSummaryCard from './RepoSummaryCard'
 import ModelSelectionSection from './ModelSelectionSection'
 import PipelineVisualization from './PipelineVisualization'
@@ -18,8 +19,26 @@ interface Props {
 export default function RepositorySetup({ repo }: Props) {
     const [loading, setLoading] = useState(false)
     const [error, setError] = useState<string | null>(null)
-    const [selectedModel, setSelectedModel] = useState<string>('OPENROUTER_QWEN_EMBEDDING')
+    const [selectedModel, setSelectedModel] = useState<string>('OPENROUTER_QWEN_EMBEDDING_1536')
+    const [totalFiles, setTotalFiles] = useState<number | undefined>(undefined)
     const router = useRouter()
+
+    useEffect(() => {
+        const fetchFileCount = async () => {
+            try {
+                const session = await getSession()
+                const token = (session as any)?.githubAccessToken
+                const res = await axios.get(`https://api.github.com/repos/${repo.full_name}/git/trees/${repo.default_branch}?recursive=1`, {
+                    headers: token ? { Authorization: `Bearer ${token}` } : undefined
+                })
+                const filesCount = res.data.tree.filter((item: any) => item.type === 'blob').length
+                setTotalFiles(filesCount)
+            } catch (err) {
+                console.error("Failed to fetch file count", err)
+            }
+        }
+        fetchFileCount()
+    }, [repo.full_name, repo.default_branch])
 
     const handleStartIndexing = async () => {
         setLoading(true)
@@ -63,6 +82,8 @@ export default function RepositorySetup({ repo }: Props) {
                 }
             }
 
+            sessionStorage.setItem(`model-name-${created.id}`, AVAILABLE_MODELS.find(m => m.id === selectedModel)?.name || 'Qwen3 Embedding')
+
             router.push(`/indexing/${created.id}`)
         } catch (err) {
             console.error('Failed to start indexing:', err)
@@ -71,6 +92,8 @@ export default function RepositorySetup({ repo }: Props) {
             setLoading(false)
         }
     }
+
+    const selectedModelInfo = AVAILABLE_MODELS.find(m => m.id === selectedModel)
 
     return (
         <div style={{ maxWidth: '720px', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '24px' }}>
@@ -127,7 +150,7 @@ export default function RepositorySetup({ repo }: Props) {
                 <p style={{ fontSize: '12px', fontWeight: 600, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.08em', margin: 0 }}>
                     Step 4 · What to Expect
                 </p>
-                <ProcessingEstimates />
+                <ProcessingEstimates modelName={selectedModelInfo?.name} totalFiles={totalFiles} />
             </div>
 
             {error && (

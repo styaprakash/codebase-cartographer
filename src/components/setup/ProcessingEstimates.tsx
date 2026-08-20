@@ -34,7 +34,7 @@ export default function ProcessingEstimates({ totalFiles, modelName = 'Qwen3 Emb
                     <div>
                         <p style={{ fontSize: '11px', color: '#64748B', margin: 0 }}>Files</p>
                         <p style={{ fontSize: '13px', color: '#64748B', fontWeight: 400, margin: 0 }}>
-                            {totalFiles ? `${totalFiles} files` : 'Detecting...'}
+                            {totalFiles ? `${totalFiles} files` : 'Analyzed during indexing'}
                         </p>
                     </div>
                 </div>

@@ -56,6 +56,13 @@ function IndexingCard({
     const isDone = status === 'INDEXED'
     const progress = percentage
 
+    const [modelName, setModelName] = useState('Qwen3 Embedding')
+
+    useEffect(() => {
+        const storedModel = sessionStorage.getItem(`model-name-${repoId}`)
+        if (storedModel) setModelName(storedModel)
+    }, [repoId])
+
     console.log('Current UI State:', { status: status, total: totalFiles, indexed: indexedFiles })
 
     useEffect(() => {
@@ -133,7 +140,7 @@ function IndexingCard({
                 <RepositoryReady
                     repoId={repoId}
                     totalFiles={totalFiles}
-                    model="Qwen3 Embedding"
+                    model={modelName}
                     processingTime={processingTime}
                 />
             </div>
@@ -147,6 +154,7 @@ function IndexingCard({
                 retrying={retrying}
                 onRetry={handleRetry}
                 onBack={() => router.push('/dashboard')}
+                repoFullName={`${repoName}`}
             />
         )
     }
@@ -167,7 +175,7 @@ function IndexingCard({
                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '4px 10px', borderRadius: '6px', background: 'rgba(99, 102, 241, 0.1)', border: '1px solid rgba(99, 102, 241, 0.2)' }}>
                         <Cpu size={14} color="#818CF8" />
-                        <span style={{ fontSize: '12px', color: '#818CF8', fontWeight: 500 }}>Qwen3 Embedding</span>
+                        <span style={{ fontSize: '12px', color: '#818CF8', fontWeight: 500 }}>{modelName}</span>
                     </div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '4px 10px', borderRadius: '6px', background: 'rgba(6, 182, 212, 0.1)', border: '1px solid rgba(6, 182, 212, 0.2)' }}>
                         <GitBranch size={14} color="#06B6D4" />
@@ -280,12 +288,15 @@ function FailedView({
     retrying,
     onRetry,
     onBack,
+    repoFullName,
 }: {
     errorMessage: string | null
     retrying: boolean
     onRetry: () => void
     onBack: () => void
+    repoFullName: string
 }) {
+    const router = useRouter();
     return (
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: '100%', maxWidth: '672px' }}>
             <div style={{
@@ -365,43 +376,17 @@ function FailedView({
 
             <div style={{ display: 'flex', alignItems: 'center', gap: '16px', width: '100%' }}>
                 <button
-                    onClick={onRetry}
-                    disabled={retrying}
-                    style={{
-                        flex: 1,
-                        height: '48px',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        background: retrying ? undefined : '#6366F1',
-                        color: 'white',
-                        fontWeight: 600,
-                        borderRadius: '12px',
-                        border: 'none',
-                        opacity: retrying ? 0.5 : 1,
-                        fontSize: 'inherit'
-                    }}
+                    onClick={() => router.push('/dashboard')}
+                    className="flex-1 h-12 flex items-center justify-center border border-[#1E1E2E] text-[#F1F5F9] font-medium rounded-xl bg-transparent hover:bg-[#1E1E2E]/50 hover:border-[#2D2D3F] hover:shadow-[0_0_15px_rgba(255,255,255,0.05)] transition-all duration-300 transform hover:-translate-y-0.5"
                 >
-                    {retrying ? 'Retrying...' : 'Retry Indexing'}
-                    <ArrowRight style={{ marginLeft: '8px', width: '16px', height: '16px' }} />
+                    Go to Dashboard
                 </button>
                 <button
-                    onClick={onBack}
-                    style={{
-                        flex: 1,
-                        height: '48px',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        border: '1px solid #1E1E2E',
-                        color: '#F1F5F9',
-                        fontWeight: 500,
-                        borderRadius: '12px',
-                        background: 'transparent',
-                        fontSize: 'inherit'
-                    }}
+                    onClick={() => router.push(`/setup/${repoFullName}`)}
+                    className="flex-1 h-12 flex items-center justify-center border border-transparent text-white font-semibold rounded-xl bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-400 hover:to-purple-500 shadow-lg shadow-indigo-500/25 hover:shadow-indigo-500/40 transition-all duration-300 transform hover:-translate-y-0.5"
                 >
-                    Try Another Repository
+                    Reconfigure & Retry
+                    <ArrowRight className="ml-2 w-4 h-4" />
                 </button>
             </div>
 

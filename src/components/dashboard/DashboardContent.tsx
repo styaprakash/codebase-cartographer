@@ -52,7 +52,7 @@ export default function DashboardContent() {
     const handleIndexRepo = useCallback(async (repo: DashboardRepo) => {
         try {
             if (repo.backendId) {
-                if (repo.status === 'INDEXING') {
+                if (repo.status === 'INDEXING' || repo.status === 'PENDING') {
                     router.push(`/indexing/${repo.backendId}`)
                     return
                 }
@@ -76,7 +76,7 @@ export default function DashboardContent() {
 
     const handleCardClick = useCallback((repo: DashboardRepo) => {
         if (repo.backendId) {
-            if (repo.status === 'INDEXING') {
+            if (repo.status === 'INDEXING' || repo.status === 'PENDING') {
                 router.push(`/indexing/${repo.backendId}`)
                 return
             }

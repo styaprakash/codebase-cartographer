@@ -142,9 +142,11 @@ export default function ExplorerLayout({ repoId }: ExplorerLayoutProps) {
                             padding: '0 8px',
                             transition: 'all 0.2s ease',
                             color: activeTab === 'ask-ai' ? '#06B6D4' : '#64748B',
+                            borderTop: 'none',
+                            borderLeft: 'none',
+                            borderRight: 'none',
                             borderBottom: activeTab === 'ask-ai' ? '2px solid #06B6D4' : '2px solid transparent',
                             backgroundColor: 'transparent',
-                            border: 'none',
                             cursor: 'pointer',
                         }}
                     >
@@ -163,9 +165,11 @@ export default function ExplorerLayout({ repoId }: ExplorerLayoutProps) {
                             padding: '0 8px',
                             transition: 'all 0.2s ease',
                             color: activeTab === 'dep-map' ? '#06B6D4' : '#64748B',
+                            borderTop: 'none',
+                            borderLeft: 'none',
+                            borderRight: 'none',
                             borderBottom: activeTab === 'dep-map' ? '2px solid #06B6D4' : '2px solid transparent',
                             backgroundColor: 'transparent',
-                            border: 'none',
                             cursor: 'pointer',
                         }}
                     >

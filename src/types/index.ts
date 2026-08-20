@@ -56,7 +56,7 @@ export interface ModelInfo {
 }
 
 export const AVAILABLE_MODELS: ModelInfo[] = [
-  { id: 'OPENROUTER_QWEN_EMBEDDING', name: 'OpenRouter (Qwen3 8B)', description: 'Blazing fast cloud embeddings.', brandTheme: 'qwen' },
+  { id: 'OPENROUTER_QWEN_EMBEDDING_1536', name: 'OpenRouter (Qwen3 8B)', description: 'Blazing fast cloud embeddings.', brandTheme: 'qwen' },
   { id: 'GEMINI_EMBEDDING', name: 'Google Gemini', description: "Strong semantic understanding using Gemini's text-embedding-004.", brandTheme: 'gemini' },
   { id: 'QWEN3_EMBEDDING', name: 'Local Qwen3 (Ollama)', description: 'Runs entirely locally on your hardware. Requires GPU.', brandTheme: 'qwen' },
 ]
