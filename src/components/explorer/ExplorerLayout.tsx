@@ -20,6 +20,7 @@ import DependencyMap from './DependencyMap'
 import DetailsPanel from './DetailsPanel'
 import { repoApi, graphApi } from '@/lib/api'
 import { BackendRepo, FileNode, AVAILABLE_MODELS } from '@/types'
+import { buildFileTree } from '@/hooks/useFileTree'
 
 interface ExplorerLayoutProps {
     repoId: string
@@ -34,9 +35,14 @@ export default function ExplorerLayout({ repoId }: ExplorerLayoutProps) {
     const [selectedNode, setSelectedNode] = useState<string | null>(null)
     const [isLeftPanelOpen, setIsLeftPanelOpen] = useState(true)
     const [isRightPanelOpen, setIsRightPanelOpen] = useState(true)
-    const [llmProvider, setLlmProvider] = useState(AVAILABLE_MODELS[0].id)
-    const [isModelDropdownOpen, setIsModelDropdownOpen] = useState(false)
     const dropdownRef = useRef<HTMLDivElement>(null)
+
+    // Resizable sidebar states
+    const [sidebarWidth, setSidebarWidth] = useState(240)
+    const [isDragging, setIsDragging] = useState(false)
+    const [rightSidebarWidth, setRightSidebarWidth] = useState(300)
+    const [isRightDragging, setIsRightDragging] = useState(false)
+    const [pendingPrompt, setPendingPrompt] = useState<string | null>(null)
 
     // Data fetching
     const [repository, setRepository] = useState<BackendRepo | null>(null)
@@ -58,7 +64,8 @@ export default function ExplorerLayout({ repoId }: ExplorerLayoutProps) {
                 ])
                 if (isMounted) {
                     setRepository(repoRes.data)
-                    setFiles(filesRes.data ?? [])
+                    const rawPaths: string[] = filesRes.data ?? []
+                    setFiles(buildFileTree(rawPaths))
                 }
             } catch (err) {
                 if (isMounted) {
@@ -95,8 +102,63 @@ export default function ExplorerLayout({ repoId }: ExplorerLayoutProps) {
         setSelectedPath(null)
     }
 
-    const handleAskAbout = (moduleName: string) => {
+    const handleAskAbout = (query: string) => {
+        setPendingPrompt(query)
         setActiveTab('ask-ai')
+    }
+
+    // Resizable left sidebar logic
+    const handleLeftPointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
+        if (!isLeftPanelOpen) return
+        e.currentTarget.setPointerCapture(e.pointerId)
+        setIsDragging(true)
+        e.preventDefault() // prevent text selection
+        document.body.style.cursor = 'col-resize'
+        document.body.style.userSelect = 'none'
+    }
+
+    const handleLeftPointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
+        if (!isDragging) return
+        const maxWidth = Math.min(600, window.innerWidth * 0.5)
+        let newWidth = e.clientX
+        if (newWidth < 160) newWidth = 160
+        if (newWidth > maxWidth) newWidth = maxWidth
+        setSidebarWidth(newWidth)
+    }
+
+    const handleLeftPointerUp = (e: React.PointerEvent<HTMLDivElement>) => {
+        if (!isDragging) return
+        e.currentTarget.releasePointerCapture(e.pointerId)
+        setIsDragging(false)
+        document.body.style.cursor = 'default'
+        document.body.style.userSelect = 'auto'
+    }
+
+    // Resizable right sidebar logic
+    const handleRightPointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
+        if (!isRightPanelOpen) return
+        e.currentTarget.setPointerCapture(e.pointerId)
+        setIsRightDragging(true)
+        e.preventDefault()
+        document.body.style.cursor = 'col-resize'
+        document.body.style.userSelect = 'none'
+    }
+
+    const handleRightPointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
+        if (!isRightDragging) return
+        const maxWidth = Math.min(600, window.innerWidth * 0.5)
+        let newWidth = window.innerWidth - e.clientX
+        if (newWidth < 200) newWidth = 200 // minimum width for details panel
+        if (newWidth > maxWidth) newWidth = maxWidth
+        setRightSidebarWidth(newWidth)
+    }
+
+    const handleRightPointerUp = (e: React.PointerEvent<HTMLDivElement>) => {
+        if (!isRightDragging) return
+        e.currentTarget.releasePointerCapture(e.pointerId)
+        setIsRightDragging(false)
+        document.body.style.cursor = 'default'
+        document.body.style.userSelect = 'auto'
     }
 
     return (
@@ -180,58 +242,7 @@ export default function ExplorerLayout({ repoId }: ExplorerLayoutProps) {
 
                 {/* Right section */}
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    {/* LLM Model Selector */}
-                    <div ref={dropdownRef} style={{ position: 'relative' }}>
-                        <button
-                            onClick={() => setIsModelDropdownOpen(!isModelDropdownOpen)}
-                            style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '6px 10px', borderRadius: '6px', fontSize: '12px', fontWeight: 500, color: '#94A3B8', backgroundColor: 'transparent', border: '1px solid #1E1E2E', cursor: 'pointer', transition: 'all 0.2s' }}
-                            onMouseOver={(e) => { e.currentTarget.style.backgroundColor = '#111118'; e.currentTarget.style.borderColor = '#3E3E4E' }}
-                            onMouseOut={(e) => { e.currentTarget.style.backgroundColor = 'transparent'; e.currentTarget.style.borderColor = '#1E1E2E' }}
-                        >
-                            <Bot size={14} />
-                            {AVAILABLE_MODELS.find(m => m.id === llmProvider)?.name.split(' ').slice(0, 2).join(' ') ?? 'Model'}
-                            <ChevronDown size={14} style={{ transition: 'transform 0.2s', transform: isModelDropdownOpen ? 'rotate(180deg)' : 'rotate(0deg)' }} />
-                        </button>
 
-                        {isModelDropdownOpen && (
-                            <div style={{ position: 'absolute', right: 0, top: '100%', zIndex: 50, marginTop: '8px', width: '280px', borderRadius: '12px', border: '1px solid #1E1E2E', backgroundColor: 'rgba(10, 10, 15, 0.95)', backdropFilter: 'blur(12px)', boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.3)' }}>
-                                <div style={{ padding: '8px' }}>
-                                    <div style={{ padding: '8px 12px', fontSize: '10px', fontWeight: 600, color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                                        LLM Provider
-                                    </div>
-                                    {AVAILABLE_MODELS.map((model) => (
-                                        <button
-                                            key={model.id}
-                                            onClick={() => { setLlmProvider(model.id); setIsModelDropdownOpen(false) }}
-                                            style={{
-                                                display: 'flex',
-                                                width: '100%',
-                                                alignItems: 'center',
-                                                gap: '12px',
-                                                borderRadius: '8px',
-                                                padding: '10px 12px',
-                                                fontSize: '13px',
-                                                color: llmProvider === model.id ? '#F1F5F9' : '#94A3B8',
-                                                backgroundColor: llmProvider === model.id ? 'rgba(99, 102, 241, 0.1)' : 'transparent',
-                                                border: 'none',
-                                                cursor: 'pointer',
-                                                transition: 'all 0.2s',
-                                                textAlign: 'left',
-                                            }}
-                                            onMouseOver={(e) => { if (llmProvider !== model.id) e.currentTarget.style.backgroundColor = 'rgba(99, 102, 241, 0.05)' }}
-                                            onMouseOut={(e) => { if (llmProvider !== model.id) e.currentTarget.style.backgroundColor = 'transparent' }}
-                                        >
-                                            <div style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: llmProvider === model.id ? '#6366F1' : '#3E3E4E', flexShrink: 0 }} />
-                                            <div>
-                                                <div style={{ fontWeight: 500 }}>{model.name}</div>
-                                                <div style={{ fontSize: '11px', color: '#64748B', marginTop: '2px' }}>{model.description}</div>
-                                            </div>
-                                        </button>
-                                    ))}
-                                </div>
-                            </div>
-                        )}
-                    </div>
 
                     {/* Divider */}
                     <div style={{ width: '1px', height: '20px', backgroundColor: '#1E1E2E' }} />
@@ -271,19 +282,60 @@ export default function ExplorerLayout({ repoId }: ExplorerLayoutProps) {
             <div style={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
                 {/* Left Sidebar - File Tree */}
                 <div style={{
-                    width: isLeftPanelOpen ? '240px' : '0px',
+                    position: 'relative',
+                    width: isLeftPanelOpen ? `${sidebarWidth}px` : '0px',
                     flexShrink: 0,
-                    overflow: 'hidden',
-                    transition: 'width 0.2s ease',
-                    borderRight: isLeftPanelOpen ? '1px solid #1E1E2E' : 'none',
+                    transition: isDragging ? 'none' : 'width 0.2s ease',
                 }}>
-                    <FileTree
-                        repository={repository}
-                        files={files}
-                        isLoading={isLoadingData}
-                        selectedPath={selectedPath}
-                        onSelectFile={handleSelectFile}
-                    />
+                    <div style={{
+                        width: '100%',
+                        height: '100%',
+                        overflow: 'hidden',
+                        borderRight: isLeftPanelOpen ? '1px solid #1E1E2E' : 'none',
+                    }}>
+                        <FileTree
+                            repository={repository}
+                            files={files}
+                            isLoading={isLoadingData}
+                            selectedPath={selectedPath}
+                            onSelectFile={handleSelectFile}
+                        />
+                    </div>
+                    {/* Splitter */}
+                    {isLeftPanelOpen && (
+                        <div
+                            onPointerDown={handleLeftPointerDown}
+                            onPointerMove={handleLeftPointerMove}
+                            onPointerUp={handleLeftPointerUp}
+                            onPointerCancel={handleLeftPointerUp}
+                            style={{
+                                position: 'absolute',
+                                top: 0,
+                                right: '-4px', // shift half the width to center over border
+                                width: '8px',
+                                height: '100%',
+                                cursor: 'col-resize',
+                                zIndex: 30,
+                            }}
+                            onMouseEnter={(e) => {
+                                const divider = e.currentTarget.children[0] as HTMLElement;
+                                if (divider && !isDragging) divider.style.opacity = '1';
+                            }}
+                            onMouseLeave={(e) => {
+                                const divider = e.currentTarget.children[0] as HTMLElement;
+                                if (divider && !isDragging) divider.style.opacity = '0';
+                            }}
+                        >
+                            <div style={{
+                                width: '1px',
+                                height: '100%',
+                                backgroundColor: '#6366F1',
+                                opacity: isDragging ? 1 : 0,
+                                transition: 'opacity 0.2s ease',
+                                margin: '0 auto',
+                            }} />
+                        </div>
+                    )}
                 </div>
 
                 {/* Main Content Area */}
@@ -292,8 +344,9 @@ export default function ExplorerLayout({ repoId }: ExplorerLayoutProps) {
                         {activeTab === 'ask-ai' && (
                             <ChatPanel
                                 repoId={repoId}
-                                llmProvider={llmProvider}
                                 onFileReference={handleSelectFile}
+                                initialQuery={pendingPrompt}
+                                onClearInitialQuery={() => setPendingPrompt(null)}
                             />
                         )}
                         {activeTab === 'dep-map' && (
@@ -308,18 +361,59 @@ export default function ExplorerLayout({ repoId }: ExplorerLayoutProps) {
 
                 {/* Right Panel - Details */}
                 <div style={{
-                    width: isRightPanelOpen ? '300px' : '0px',
+                    position: 'relative',
+                    width: isRightPanelOpen ? `${rightSidebarWidth}px` : '0px',
                     flexShrink: 0,
-                    overflow: 'hidden',
-                    transition: 'width 0.2s ease',
-                    borderLeft: isRightPanelOpen ? '1px solid #1E1E2E' : 'none',
+                    transition: isRightDragging ? 'none' : 'width 0.2s ease',
                 }}>
-                    <DetailsPanel
-                        repoId={repoId}
-                        selectedPath={selectedPath || selectedNode}
-                        isVisible={isRightPanelOpen}
-                        onAskAbout={handleAskAbout}
-                    />
+                    {/* Splitter */}
+                    {isRightPanelOpen && (
+                        <div
+                            onPointerDown={handleRightPointerDown}
+                            onPointerMove={handleRightPointerMove}
+                            onPointerUp={handleRightPointerUp}
+                            onPointerCancel={handleRightPointerUp}
+                            style={{
+                                position: 'absolute',
+                                top: 0,
+                                left: '-4px', // shift half the width to center over border
+                                width: '8px',
+                                height: '100%',
+                                cursor: 'col-resize',
+                                zIndex: 30,
+                            }}
+                            onMouseEnter={(e) => {
+                                const divider = e.currentTarget.children[0] as HTMLElement;
+                                if (divider && !isRightDragging) divider.style.opacity = '1';
+                            }}
+                            onMouseLeave={(e) => {
+                                const divider = e.currentTarget.children[0] as HTMLElement;
+                                if (divider && !isRightDragging) divider.style.opacity = '0';
+                            }}
+                        >
+                            <div style={{
+                                width: '1px',
+                                height: '100%',
+                                backgroundColor: '#6366F1',
+                                opacity: isRightDragging ? 1 : 0,
+                                transition: 'opacity 0.2s ease',
+                                margin: '0 auto',
+                            }} />
+                        </div>
+                    )}
+                    <div style={{
+                        width: '100%',
+                        height: '100%',
+                        overflow: 'hidden',
+                        borderLeft: isRightPanelOpen ? '1px solid #1E1E2E' : 'none',
+                    }}>
+                        <DetailsPanel
+                            repoId={repoId}
+                            selectedPath={selectedPath || selectedNode}
+                            isVisible={isRightPanelOpen}
+                            onAskAbout={handleAskAbout}
+                        />
+                    </div>
                 </div>
             </div>
         </div>

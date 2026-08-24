@@ -18,9 +18,8 @@ export function useChat(repoId: string) {
         }
     );
 
-    const sendMessage = async (question: string, llmProvider?: string) => {
-        const provider = llmProvider || 'OPENROUTER_DEEPSEEK_V4_PRO';
-        const res = await querApi.ask(repoId, question, provider);
+    const sendMessage = async (question: string, llmProvider: string) => {
+        const res = await querApi.ask(repoId, question, llmProvider);
         mutate(); // Re-fetch history after sending
         return res.data;
     };

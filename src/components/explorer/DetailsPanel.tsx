@@ -4,22 +4,7 @@ import { useState, useEffect } from 'react'
 import { MoreHorizontal, ArrowLeft, Folder, Code2, ArrowRight } from 'lucide-react'
 import { ModuleDetails } from '@/types'
 
-// Mock fetching details based on path/id
-// In a real app, this would be an API call via a hook like useModuleDetails
-const fetchModuleDetails = async (pathOrId: string): Promise<ModuleDetails> => {
-    return new Promise((resolve) => {
-        setTimeout(() => {
-            resolve({
-                name: pathOrId.split('/').pop()?.replace(/\.[^/.]+$/, '') || 'Module',
-                filePath: pathOrId.includes('/') ? pathOrId : `src/services/${pathOrId}`,
-                description: 'Core orchestration service that manages the parallel indexing of codebases via AST parsing and vector embeddings.',
-                functions: ['initializeWorkers()', 'processRepo()', 'generateEmbeddings()'],
-                incoming: ['App.tsx'],
-                outgoing: ['ASTParser.ts', 'VectorDB.ts']
-            })
-        }, 500)
-    })
-}
+import { useDependencyGraph } from '@/hooks/useDependencyGraph'
 
 interface DetailsPanelProps {
     repoId: string
@@ -29,32 +14,54 @@ interface DetailsPanelProps {
 }
 
 export default function DetailsPanel({ repoId, selectedPath, isVisible, onAskAbout }: DetailsPanelProps) {
+    const { graph, isLoading } = useDependencyGraph(repoId)
     const [details, setDetails] = useState<ModuleDetails | null>(null)
-    const [isLoading, setIsLoading] = useState(false)
 
     useEffect(() => {
-        if (!selectedPath) {
+        if (!selectedPath || !graph) {
             setDetails(null)
             return
         }
 
-        let isMounted = true
-        setIsLoading(true)
+        const node = graph.nodes.find(n => n.id === selectedPath || n.filePath === selectedPath)
         
-        fetchModuleDetails(selectedPath).then((data) => {
-            if (isMounted) {
-                setDetails(data)
-                setIsLoading(false)
-            }
+        if (!node) {
+            // Fallback for files that might be in the tree but have no graph nodes
+            setDetails({
+                name: selectedPath.split('/').pop() || 'Unknown',
+                filePath: selectedPath,
+                description: 'No detailed dependency information available for this file.',
+                functions: [],
+                incoming: [],
+                outgoing: []
+            })
+            return
+        }
+
+        const incomingEdges = graph.edges.filter(e => e.target === node.id)
+        const incomingNames = incomingEdges.map(e => {
+            const sourceNode = graph.nodes.find(n => n.id === e.source)
+            return sourceNode ? (sourceNode.label || sourceNode.filePath.split('/').pop()!) : e.source
         })
 
-        return () => {
-            isMounted = false
-        }
-    }, [selectedPath])
+        const outgoingEdges = graph.edges.filter(e => e.source === node.id)
+        const outgoingNames = outgoingEdges.map(e => {
+            const targetNode = graph.nodes.find(n => n.id === e.target)
+            return targetNode ? (targetNode.label || targetNode.filePath.split('/').pop()!) : e.target
+        })
+
+        setDetails({
+            name: node.label || node.filePath.split('/').pop() || 'Unknown',
+            filePath: node.filePath,
+            description: `File category: ${node.category}.`,
+            functions: [],
+            incoming: Array.from(new Set(incomingNames)),
+            outgoing: Array.from(new Set(outgoingNames)),
+        })
+    }, [selectedPath, graph])
 
     return (
-        <aside style={{ width: '300px', display: 'flex', flexDirection: 'column', borderLeft: '1px solid #1E1E2E', backgroundColor: '#0A0A0F', zIndex: 10, height: '100%' }}>
+        <aside style={{ width: '100%', display: 'flex', flexDirection: 'column', backgroundColor: '#0A0A0F', zIndex: 10, height: '100%' }}>
             <div style={{ padding: '16px', borderBottom: '1px solid #1E1E2E', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                 <h2 style={{ fontSize: '12px', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '0.05em', color: '#64748B', margin: 0 }}>Details</h2>
                 <MoreHorizontal size={16} color="#64748B" style={{ cursor: 'pointer', transition: 'color 0.2s' }} onMouseOver={(e) => e.currentTarget.style.color = '#F1F5F9'} onMouseOut={(e) => e.currentTarget.style.color = '#64748B'} />
@@ -141,7 +148,7 @@ export default function DetailsPanel({ repoId, selectedPath, isVisible, onAskAbo
                         </div>
 
                         <button 
-                            onClick={() => onAskAbout(`Tell me about ${details.name}`)}
+                            onClick={() => onAskAbout(`Please explain the purpose of ${details.name} and list its key functions.`)}
                             style={{ width: '100%', padding: '12px', marginTop: '16px', backgroundColor: '#4F46E5', color: '#ffffff', fontSize: '12px', fontWeight: 600, borderRadius: '12px', transition: 'all 0.2s', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', boxShadow: '0 10px 15px -3px rgba(79, 70, 229, 0.2), 0 4px 6px -2px rgba(79, 70, 229, 0.1)', cursor: 'pointer', border: 'none' }}
                             onMouseOver={(e) => { e.currentTarget.style.backgroundColor = '#6366F1'; const icon = e.currentTarget.querySelector('svg'); if (icon) icon.style.transform = 'translateX(4px)'; }}
                             onMouseOut={(e) => { e.currentTarget.style.backgroundColor = '#4F46E5'; const icon = e.currentTarget.querySelector('svg'); if (icon) icon.style.transform = 'translateX(0)'; }}

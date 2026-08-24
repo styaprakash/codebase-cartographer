@@ -3,7 +3,7 @@ import { useSession } from "next-auth/react";
 import { FileNode } from "@/types";
 import { graphApi } from "@/lib/api";
 
-function buildFileTree(paths: string[]): FileNode[] {
+export function buildFileTree(paths: string[]): FileNode[] {
     const root: FileNode[] = [];
 
     for (const path of paths) {

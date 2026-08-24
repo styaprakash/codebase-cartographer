@@ -4,22 +4,56 @@ import { useState, useRef, useEffect } from 'react'
 import { ShieldCheck, Database, CreditCard, Zap, Bot, User, FileCode, AlertTriangle, Send, Loader2 } from 'lucide-react'
 import { useChat } from '@/hooks/useChat'
 import { ChatMessage } from '@/types'
+import { querApi } from '@/lib/api'
 
 interface ChatPanelProps {
     repoId: string
-    llmProvider: string
     onFileReference?: (path: string) => void
+    initialQuery?: string | null
+    onClearInitialQuery?: () => void
 }
 
-export default function ChatPanel({ repoId, llmProvider, onFileReference }: ChatPanelProps) {
+export default function ChatPanel({ repoId, onFileReference, initialQuery, onClearInitialQuery }: ChatPanelProps) {
     const { messages, isLoading, sendMessage } = useChat(repoId)
     const [input, setInput] = useState('')
     const [localMessages, setLocalMessages] = useState<ChatMessage[]>([])
     const [isThinking, setIsThinking] = useState(false)
-    const [selectedLlm, setSelectedLlm] = useState<string>('OPENROUTER_DEEPSEEK_V4_PRO')
+    const [availableModels, setAvailableModels] = useState<string[]>([])
+    const [selectedLlm, setSelectedLlm] = useState<string>('')
     const messagesEndRef = useRef<HTMLDivElement>(null)
 
     const showOnboarding = localMessages.length === 0 && !isThinking
+
+    useEffect(() => {
+        if (initialQuery) {
+            setInput(initialQuery)
+            onClearInitialQuery?.()
+        }
+    }, [initialQuery, onClearInitialQuery])
+
+    // Sync backend history into local state
+    useEffect(() => {
+        if (messages) {
+            setLocalMessages(messages)
+        }
+    }, [messages])
+
+    // Fetch available models on mount
+    useEffect(() => {
+        querApi.getModels().then(res => {
+            const models = res.data
+            setAvailableModels(models)
+            if (models.length > 0) {
+                setSelectedLlm(models[0])
+            }
+        }).catch(err => {
+            console.error("Failed to fetch models", err)
+        })
+    }, [])
+
+    const formatModelName = (modelId: string) => {
+        return modelId.split('_').map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()).join(' ')
+    }
 
     const handleSend = async () => {
         if (!input.trim() || isThinking) return
@@ -37,7 +71,17 @@ export default function ChatPanel({ repoId, llmProvider, onFileReference }: Chat
         setLocalMessages(prev => [...prev, userMessage])
 
         try {
-            await sendMessage(currentInput, llmProvider)
+            const response = await sendMessage(currentInput, selectedLlm)
+            
+            const assistantMessage: ChatMessage = {
+                id: (Date.now() + 1).toString(),
+                role: 'assistant',
+                content: response.answer,
+                citations: response.citations,
+                timestamp: new Date().toISOString(),
+            }
+            
+            setLocalMessages(prev => [...prev, assistantMessage])
         } catch (error) {
             console.error("Failed to send message:", error)
             const errorMessage: ChatMessage = {
@@ -174,40 +218,6 @@ export default function ChatPanel({ repoId, llmProvider, onFileReference }: Chat
                     <span style={{ color: 'rgba(234, 179, 8, 0.6)' }}>Resets at midnight</span>
                 </div>
 
-                <div style={{ marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <span style={{ fontSize: '10px', color: '#64748B', fontWeight: 500 }}>Model:</span>
-                    <select
-                        value={selectedLlm}
-                        onChange={(e) => setSelectedLlm(e.target.value)}
-                        style={{ backgroundColor: '#111118', border: '1px solid #1E1E2E', borderRadius: '6px', padding: '4px 8px', fontSize: '11px', color: '#F1F5F9', outline: 'none', cursor: 'pointer' }}
-                    >
-                        <optgroup label="Google AI Studio (Free Tier)">
-                            <option value="GEMINI_1_5_FLASH">Gemini 1.5 Flash</option>
-                            <option value="GEMINI_3_5_FLASH">Gemini 3.5 Flash</option>
-                            <option value="GEMINI_2_5_FLASH">Gemini 2.5 Flash</option>
-                            <option value="GEMINI_2_0_FLASH">Gemini 2.0 Flash</option>
-                            <option value="GEMINI_2_5_FLASH_LITE">Gemini 2.5 Flash Lite</option>
-                            <option value="GEMINI_3_1_FLASH_LITE_PREVIEW">Gemini 3.1 Flash Lite Preview</option>
-                        </optgroup>
-                        <optgroup label="Nvidia API">
-                            <option value="NVIDIA_GLM_5_2">GLM 5.2 (Nvidia)</option>
-                        </optgroup>
-                        <optgroup label="Local Hardware (Ollama)">
-                            <option value="OLLAMA_LLAMA3">Llama 3</option>
-                            <option value="OLLAMA_LLAMA3_1">Llama 3.1</option>
-                            <option value="OLLAMA_QWEN2_5">Qwen 2.5</option>
-                            <option value="OLLAMA_DEEPSEEK_CODER">DeepSeek Coder</option>
-                            <option value="OLLAMA_GEMMA_4_E4B">Gemma 4 E4B</option>
-                        </optgroup>
-                        <optgroup label="OpenRouter (Cloud)">
-                            <option value="OPENROUTER_DEEPSEEK_V4_PRO">DeepSeek V4 Pro</option>
-                            <option value="OPENROUTER_DEEPSEEK_V4_FLASH">DeepSeek V4 Flash</option>
-                            <option value="OPENROUTER_GLM_5_2">GLM 5.2</option>
-                            <option value="OPENROUTER_QWEN_3">Qwen 3</option>
-                        </optgroup>
-                    </select>
-                </div>
-
                 <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
                     <input
                         type="text"
@@ -215,13 +225,27 @@ export default function ChatPanel({ repoId, llmProvider, onFileReference }: Chat
                         onChange={(e) => setInput(e.target.value)}
                         onKeyDown={handleKeyDown}
                         placeholder="Ask anything about this codebase..."
-                        style={{ width: '100%', backgroundColor: '#111118', border: '1px solid #1E1E2E', borderRadius: '12px', padding: '16px 96px 16px 16px', fontSize: '14px', outline: 'none', transition: 'border-color 0.2s', color: '#F1F5F9' }}
+                        style={{ width: '100%', backgroundColor: '#111118', border: '1px solid #1E1E2E', borderRadius: '12px', padding: '16px 180px 16px 16px', fontSize: '14px', outline: 'none', transition: 'border-color 0.2s', color: '#F1F5F9' }}
                         onFocus={(e) => e.target.style.borderColor = '#6366F1'}
                         onBlur={(e) => e.target.style.borderColor = '#1E1E2E'}
                         disabled={isThinking}
                     />
-                    <div style={{ position: 'absolute', right: '12px', display: 'flex', alignItems: 'center', gap: '12px' }}>
-                        <span style={{ fontSize: '10px', color: '#64748B', backgroundColor: '#1E1E2E', padding: '2px 6px', borderRadius: '4px', fontWeight: 500 }}>⌘ Enter</span>
+                    <div style={{ position: 'absolute', right: '12px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <select
+                            value={selectedLlm}
+                            onChange={(e) => setSelectedLlm(e.target.value)}
+                            style={{ backgroundColor: '#1E1E2E', border: 'none', borderRadius: '8px', padding: '6px 8px', fontSize: '11px', color: '#94A3B8', outline: 'none', cursor: 'pointer', maxWidth: '140px' }}
+                            title="Select Model"
+                            disabled={availableModels.length === 0}
+                        >
+                            {availableModels.length === 0 ? (
+                                <option value="">Loading...</option>
+                            ) : (
+                                availableModels.map(model => (
+                                    <option key={model} value={model}>{formatModelName(model)}</option>
+                                ))
+                            )}
+                        </select>
                         <button
                             onClick={handleSend}
                             disabled={!input.trim() || isThinking}

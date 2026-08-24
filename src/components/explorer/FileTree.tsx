@@ -23,7 +23,7 @@ export default function FileTree({ repository, files, isLoading, selectedPath, o
     }
 
     return (
-        <aside style={{ width: '240px', display: 'flex', flexDirection: 'column', borderRight: '1px solid #1E1E2E', backgroundColor: '#0A0A0F', zIndex: 10, height: '100%' }}>
+        <aside style={{ width: '100%', display: 'flex', flexDirection: 'column', backgroundColor: '#0A0A0F', zIndex: 10, height: '100%' }}>
             {/* Header */}
             <div style={{ padding: '16px', borderBottom: '1px solid #1E1E2E' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>

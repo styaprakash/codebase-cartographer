@@ -32,6 +32,9 @@ api.interceptors.request.use(async (config) => {
 api.interceptors.response.use(
     (response) => response,
     async (error) => {
+        console.error("API Error Response:", error.response?.data);
+        console.error("API Error Status:", error.response?.status);
+        console.error("API Error Request URL:", error.config?.url);
         // 401 if the token expired or is missing — clear session and redirect to landing
         if (error.response?.status === 401) {
             await signOut({ redirect: false })
@@ -64,7 +67,8 @@ export const querApi = {
     ask: (repoId: string, question: string, llmProvider: string) => api.post(`/chat/${repoId}`, { query: question, llmProvider }),
     getHistory: (repoId: string) => {
         return api.get(`/repos/${repoId}/queries`)
-    }
+    },
+    getModels: () => api.get('/chat/models'),
 }
 
 export const graphApi = {

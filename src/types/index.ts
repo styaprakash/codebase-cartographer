@@ -44,7 +44,7 @@ export interface DashboardRepo {
 }
 
 // ── Embedding Models ────────────────────────────────
-export type EmbeddingModel = 'OPENROUTER_QWEN_EMBEDDING' | 'GEMINI_EMBEDDING' | 'QWEN3_EMBEDDING'
+export type EmbeddingModel = 'OPENROUTER_QWEN_EMBEDDING_1536' | 'GEMINI_EMBEDDING' | 'QWEN3_EMBEDDING'
 
 export type BrandTheme = 'qwen' | 'gemini'
 
@@ -60,6 +60,7 @@ export const AVAILABLE_MODELS: ModelInfo[] = [
   { id: 'GEMINI_EMBEDDING', name: 'Google Gemini', description: "Strong semantic understanding using Gemini's text-embedding-004.", brandTheme: 'gemini' },
   { id: 'QWEN3_EMBEDDING', name: 'Local Qwen3 (Ollama)', description: 'Runs entirely locally on your hardware. Requires GPU.', brandTheme: 'qwen' },
 ]
+
 
 // ── File Tree Types ──────────────────────────────────
 export interface FileNode {
