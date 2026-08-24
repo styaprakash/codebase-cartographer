@@ -35,7 +35,6 @@ export default function ExplorerLayout({ repoId }: ExplorerLayoutProps) {
     const [selectedNode, setSelectedNode] = useState<string | null>(null)
     const [isLeftPanelOpen, setIsLeftPanelOpen] = useState(true)
     const [isRightPanelOpen, setIsRightPanelOpen] = useState(true)
-    const dropdownRef = useRef<HTMLDivElement>(null)
 
     // Resizable sidebar states
     const [sidebarWidth, setSidebarWidth] = useState(240)
@@ -80,17 +79,6 @@ export default function ExplorerLayout({ repoId }: ExplorerLayoutProps) {
         fetchData()
         return () => { isMounted = false }
     }, [repoId, backendToken])
-
-    // Close dropdown on outside click
-    useEffect(() => {
-        const handleClickOutside = (e: MouseEvent) => {
-            if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
-                setIsModelDropdownOpen(false)
-            }
-        }
-        document.addEventListener('mousedown', handleClickOutside)
-        return () => document.removeEventListener('mousedown', handleClickOutside)
-    }, [])
 
     const handleSelectFile = (path: string) => {
         setSelectedPath(path)
