@@ -40,14 +40,11 @@ export default function IndexingPage() {
     return (
         <div style={{
             minHeight: '100vh',
-            height: isDone ? '100vh' : 'auto',
-            overflow: isDone ? 'hidden' : 'auto',
             background: '#0A0A0F',
             display: 'flex',
             flexDirection: 'column',
             alignItems: 'center',
-            justifyContent: isDone ? 'center' : 'flex-start',
-            padding: isDone ? '0 24px' : '48px 24px',
+            padding: '48px 24px',
             fontFamily: 'var(--font-geist-sans), system-ui, sans-serif',
         }}>
             {!isDone && <IndexingBackground />}
@@ -61,6 +58,7 @@ export default function IndexingPage() {
                 display: 'flex',
                 flexDirection: 'column',
                 alignItems: 'center',
+                margin: 'auto 0',
             }}>
                 <IndexingCard
                     repoName={displayRepoName}
