@@ -21,6 +21,7 @@ export default function ChatPanel({ repoId, onFileReference, initialQuery, onCle
     const [availableModels, setAvailableModels] = useState<string[]>([])
     const [selectedLlm, setSelectedLlm] = useState<string>('')
     const messagesEndRef = useRef<HTMLDivElement>(null)
+    const textareaRef = useRef<HTMLTextAreaElement>(null)
 
     const showOnboarding = localMessages.length === 0 && !isThinking
 
@@ -60,6 +61,9 @@ export default function ChatPanel({ repoId, onFileReference, initialQuery, onCle
 
         const currentInput = input
         setInput('')
+        if (textareaRef.current) {
+            textareaRef.current.style.height = '52px'
+        }
         setIsThinking(true)
 
         const userMessage: ChatMessage = {
@@ -96,8 +100,9 @@ export default function ChatPanel({ repoId, onFileReference, initialQuery, onCle
         }
     }
 
-    const handleKeyDown = (e: React.KeyboardEvent) => {
-        if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
+    const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+        if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault()
             handleSend()
         }
     }
@@ -241,13 +246,34 @@ export default function ChatPanel({ repoId, onFileReference, initialQuery, onCle
                 )}
 
                 <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
-                    <input
-                        type="text"
+                    <textarea
+                        ref={textareaRef}
                         value={input}
-                        onChange={(e) => setInput(e.target.value)}
+                        onChange={(e) => {
+                            setInput(e.target.value)
+                            e.target.style.height = 'auto'
+                            e.target.style.height = `${Math.min(e.target.scrollHeight, 200)}px`
+                        }}
                         onKeyDown={handleKeyDown}
                         placeholder="Ask anything about this codebase..."
-                        style={{ width: '100%', backgroundColor: '#111118', border: '1px solid #1E1E2E', borderRadius: '12px', padding: '16px 180px 16px 16px', fontSize: '14px', outline: 'none', transition: 'border-color 0.2s', color: '#F1F5F9' }}
+                        style={{ 
+                            width: '100%', 
+                            backgroundColor: '#111118', 
+                            border: '1px solid #1E1E2E', 
+                            borderRadius: '12px', 
+                            padding: '16px 180px 16px 16px', 
+                            fontSize: '14px', 
+                            outline: 'none', 
+                            transition: 'border-color 0.2s', 
+                            color: '#F1F5F9',
+                            resize: 'none',
+                            minHeight: '52px',
+                            maxHeight: '200px',
+                            overflowY: 'auto',
+                            lineHeight: '20px',
+                            fontFamily: 'inherit'
+                        }}
+                        rows={1}
                         onFocus={(e) => e.target.style.borderColor = '#6366F1'}
                         onBlur={(e) => e.target.style.borderColor = '#1E1E2E'}
                         disabled={isThinking}
