@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useRef, useEffect } from 'react'
-import { ShieldCheck, Database, CreditCard, Zap, Bot, User, FileCode, AlertTriangle, Send, Loader2 } from 'lucide-react'
+import { ShieldCheck, Database, CreditCard, Zap, Bot, User, FileCode, AlertTriangle, Send, Loader2, Maximize2, Minimize2 } from 'lucide-react'
 import { useChat } from '@/hooks/useChat'
 import { ChatMessage } from '@/types'
 import { querApi } from '@/lib/api'
@@ -22,6 +22,7 @@ export default function ChatPanel({ repoId, onFileReference, initialQuery, onCle
     const [selectedLlm, setSelectedLlm] = useState<string>('')
     const messagesEndRef = useRef<HTMLDivElement>(null)
     const textareaRef = useRef<HTMLTextAreaElement>(null)
+    const [isExpanded, setIsExpanded] = useState(false)
 
     const showOnboarding = localMessages.length === 0 && !isThinking
 
@@ -111,6 +112,18 @@ export default function ChatPanel({ repoId, onFileReference, initialQuery, onCle
     useEffect(() => {
         messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
     }, [localMessages, isThinking])
+
+    // Handle manual expand toggle
+    useEffect(() => {
+        if (textareaRef.current) {
+            if (isExpanded) {
+                textareaRef.current.style.height = '400px'
+            } else {
+                textareaRef.current.style.height = 'auto'
+                textareaRef.current.style.height = `${Math.min(textareaRef.current.scrollHeight, 200)}px`
+            }
+        }
+    }, [isExpanded])
 
     const userQueryCount = localMessages.filter(m => m.role === 'user').length;
     const MAX_QUERIES = 20;
@@ -245,40 +258,61 @@ export default function ChatPanel({ repoId, onFileReference, initialQuery, onCle
                     </>
                 )}
 
-                <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+                <div 
+                    style={{ 
+                        position: 'relative', 
+                        display: 'flex', 
+                        flexDirection: 'column',
+                        backgroundColor: '#111118', 
+                        border: '1px solid #1E1E2E', 
+                        borderRadius: '16px', 
+                        transition: 'border-color 0.2s',
+                    }}
+                    onFocus={(e) => e.currentTarget.style.borderColor = '#6366F1'}
+                    onBlur={(e) => e.currentTarget.style.borderColor = '#1E1E2E'}
+                >
+                    <button
+                        onClick={() => setIsExpanded(!isExpanded)}
+                        style={{ position: 'absolute', top: '12px', right: '12px', width: '28px', height: '28px', borderRadius: '6px', backgroundColor: 'transparent', color: '#64748B', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', border: 'none', transition: 'all 0.2s', zIndex: 10 }}
+                        onMouseOver={(e) => { e.currentTarget.style.backgroundColor = '#1E1E2E'; e.currentTarget.style.color = '#F1F5F9' }}
+                        onMouseOut={(e) => { e.currentTarget.style.backgroundColor = 'transparent'; e.currentTarget.style.color = '#64748B' }}
+                        title={isExpanded ? "Collapse" : "Expand"}
+                    >
+                        {isExpanded ? <Minimize2 size={16} /> : <Maximize2 size={16} />}
+                    </button>
+
                     <textarea
                         ref={textareaRef}
                         value={input}
                         onChange={(e) => {
                             setInput(e.target.value)
-                            e.target.style.height = 'auto'
-                            e.target.style.height = `${Math.min(e.target.scrollHeight, 200)}px`
+                            if (!isExpanded) {
+                                e.target.style.height = 'auto'
+                                e.target.style.height = `${Math.min(e.target.scrollHeight, 200)}px`
+                            }
                         }}
                         onKeyDown={handleKeyDown}
                         placeholder="Ask anything about this codebase..."
                         style={{ 
                             width: '100%', 
-                            backgroundColor: '#111118', 
-                            border: '1px solid #1E1E2E', 
-                            borderRadius: '12px', 
-                            padding: '16px 180px 16px 16px', 
+                            backgroundColor: 'transparent', 
+                            border: 'none', 
+                            padding: '16px 48px 8px 16px', 
                             fontSize: '14px', 
                             outline: 'none', 
-                            transition: 'border-color 0.2s', 
                             color: '#F1F5F9',
                             resize: 'none',
-                            minHeight: '52px',
-                            maxHeight: '200px',
+                            minHeight: isExpanded ? '400px' : '52px',
+                            maxHeight: isExpanded ? '60vh' : '200px',
                             overflowY: 'auto',
                             lineHeight: '20px',
                             fontFamily: 'inherit'
                         }}
                         rows={1}
-                        onFocus={(e) => e.target.style.borderColor = '#6366F1'}
-                        onBlur={(e) => e.target.style.borderColor = '#1E1E2E'}
                         disabled={isThinking}
                     />
-                    <div style={{ position: 'absolute', right: '12px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    
+                    <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', padding: '4px 12px 12px 12px', gap: '8px' }}>
                         <select
                             value={selectedLlm}
                             onChange={(e) => setSelectedLlm(e.target.value)}
