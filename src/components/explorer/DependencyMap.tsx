@@ -55,6 +55,11 @@ export default function DependencyMap({ repoId, selectedNodeId, onSelectNode }: 
     const [nodes, setNodes, onNodesChange] = useNodesState([])
     const [edges, setEdges, onEdgesChange] = useEdgesState([])
     const [showOnboarding, setShowOnboarding] = useState(true)
+    const [rfInstance, setRfInstance] = useState<any>(null)
+
+    const handleZoomIn = () => rfInstance?.zoomIn?.({ duration: 200 })
+    const handleZoomOut = () => rfInstance?.zoomOut?.({ duration: 200 })
+    const handleFitView = () => rfInstance?.fitView?.({ duration: 200, padding: 0.2 })
 
     // Transform API graph data to ReactFlow format
     useEffect(() => {
@@ -136,14 +141,36 @@ export default function DependencyMap({ repoId, selectedNodeId, onSelectNode }: 
                 onEdgesChange={onEdgesChange}
                 onNodeClick={onNodeClick}
                 nodeTypes={nodeTypes}
+                onInit={setRfInstance}
                 fitView
                 proOptions={{ hideAttribution: true }} // Hide watermark
             >
                 <Background color="#1E1E2E" gap={20} size={1} />
                 
-                {/* We use our own custom UI for controls/minimap matching the design */}
-                {/* <Controls /> */}
-                {/* <MiniMap /> */}
+                <MiniMap 
+                    className="glass-panel"
+                    nodeColor={(n) => {
+                        const colorMap: Record<string, string> = {
+                            component: '#A855F7',
+                            service: '#06B6D4',
+                            utility: '#10B981',
+                            config: '#F59E0B',
+                        }
+                        return colorMap[n.data?.category as string] || '#6366F1'
+                    }}
+                    style={{
+                        backgroundColor: '#111118',
+                        border: '1px solid #1E1E2E',
+                        borderRadius: '12px',
+                        width: '192px',
+                        height: '128px',
+                        margin: 0,
+                        right: '24px',
+                        bottom: '24px',
+                    }}
+                    maskColor="rgba(10, 10, 15, 0.7)"
+                    position="bottom-right"
+                />
             </ReactFlow>
 
             {/* Onboarding Tooltip */}
@@ -193,25 +220,17 @@ export default function DependencyMap({ repoId, selectedNodeId, onSelectNode }: 
                 
                 {/* Custom Controls UI (visual only for this implementation, would tie to ReactFlow instance in full version) */}
                 <div style={{ display: 'flex', alignItems: 'center', gap: '4px', backgroundColor: '#111118', border: '1px solid #1E1E2E', borderRadius: '8px', padding: '4px' }}>
-                    <button style={{ width: '28px', height: '28px', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '4px', color: '#64748B', transition: 'all 0.2s', backgroundColor: 'transparent', border: 'none', cursor: 'pointer' }} onMouseOver={(e) => { e.currentTarget.style.backgroundColor = '#1E1E2E'; e.currentTarget.style.color = '#F1F5F9'; }} onMouseOut={(e) => { e.currentTarget.style.backgroundColor = 'transparent'; e.currentTarget.style.color = '#64748B'; }}>
+                    <button onClick={handleZoomIn} style={{ width: '28px', height: '28px', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '4px', color: '#64748B', transition: 'all 0.2s', backgroundColor: 'transparent', border: 'none', cursor: 'pointer' }} onMouseOver={(e) => { e.currentTarget.style.backgroundColor = '#1E1E2E'; e.currentTarget.style.color = '#F1F5F9'; }} onMouseOut={(e) => { e.currentTarget.style.backgroundColor = 'transparent'; e.currentTarget.style.color = '#64748B'; }}>
                         <Plus size={14} />
                     </button>
-                    <button style={{ width: '28px', height: '28px', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '4px', color: '#64748B', transition: 'all 0.2s', backgroundColor: 'transparent', border: 'none', cursor: 'pointer' }} onMouseOver={(e) => { e.currentTarget.style.backgroundColor = '#1E1E2E'; e.currentTarget.style.color = '#F1F5F9'; }} onMouseOut={(e) => { e.currentTarget.style.backgroundColor = 'transparent'; e.currentTarget.style.color = '#64748B'; }}>
+                    <button onClick={handleZoomOut} style={{ width: '28px', height: '28px', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '4px', color: '#64748B', transition: 'all 0.2s', backgroundColor: 'transparent', border: 'none', cursor: 'pointer' }} onMouseOver={(e) => { e.currentTarget.style.backgroundColor = '#1E1E2E'; e.currentTarget.style.color = '#F1F5F9'; }} onMouseOut={(e) => { e.currentTarget.style.backgroundColor = 'transparent'; e.currentTarget.style.color = '#64748B'; }}>
                         <Minus size={14} />
                     </button>
                     <div style={{ width: '1px', height: '16px', backgroundColor: '#1E1E2E', margin: '0 4px' }}></div>
-                    <button style={{ width: '28px', height: '28px', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '4px', color: '#64748B', transition: 'all 0.2s', backgroundColor: 'transparent', border: 'none', cursor: 'pointer' }} onMouseOver={(e) => { e.currentTarget.style.backgroundColor = '#1E1E2E'; e.currentTarget.style.color = '#F1F5F9'; }} onMouseOut={(e) => { e.currentTarget.style.backgroundColor = 'transparent'; e.currentTarget.style.color = '#64748B'; }}>
+                    <button onClick={handleFitView} style={{ width: '28px', height: '28px', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '4px', color: '#64748B', transition: 'all 0.2s', backgroundColor: 'transparent', border: 'none', cursor: 'pointer' }} onMouseOver={(e) => { e.currentTarget.style.backgroundColor = '#1E1E2E'; e.currentTarget.style.color = '#F1F5F9'; }} onMouseOut={(e) => { e.currentTarget.style.backgroundColor = 'transparent'; e.currentTarget.style.color = '#64748B'; }}>
                         <Maximize size={14} />
                     </button>
                 </div>
-            </div>
-
-            {/* Custom Minimap UI */}
-            <div className="glass-panel" style={{ position: 'absolute', bottom: '24px', right: '24px', width: '192px', height: '128px', border: '1px solid #1E1E2E', borderRadius: '12px', overflow: 'hidden', pointerEvents: 'none', zIndex: 10 }}>
-                <div style={{ width: '100%', height: '100%', opacity: 0.3, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                    <Map size={36} color="#64748B" />
-                </div>
-                <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', width: '40px', height: '32px', border: '1px solid rgba(99, 102, 241, 0.5)', backgroundColor: 'rgba(99, 102, 241, 0.1)', borderRadius: '4px' }}></div>
             </div>
         </div>
     )

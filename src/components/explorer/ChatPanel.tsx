@@ -107,6 +107,18 @@ export default function ChatPanel({ repoId, onFileReference, initialQuery, onCle
         messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
     }, [localMessages, isThinking])
 
+    const userQueryCount = localMessages.filter(m => m.role === 'user').length;
+    const MAX_QUERIES = 20;
+    const showQueryBanner = userQueryCount >= 15;
+    
+    let queryBannerText = "";
+    if (userQueryCount === 15) {
+        queryBannerText = `You've used 15 of your 20 free daily queries.`;
+    } else if (userQueryCount > 15) {
+        const queriesLeft = Math.max(0, MAX_QUERIES - userQueryCount);
+        queryBannerText = `${queriesLeft} queries left.`;
+    }
+
     return (
         <div id="ask-ai-view" style={{ display: 'flex', flexDirection: 'column', height: '100%', position: 'relative', backgroundColor: '#0A0A0F' }}>
             <div id="chat-history" className="custom-scrollbar" style={{ flex: 1, overflowY: 'auto', padding: '24px', display: 'flex', flexDirection: 'column', gap: '24px' }}>
@@ -210,13 +222,23 @@ export default function ChatPanel({ repoId, onFileReference, initialQuery, onCle
             </div>
 
             <div style={{ padding: '24px', borderTop: '1px solid #1E1E2E', backgroundColor: '#0A0A0F' }}>
-                <div id="query-banner" style={{ marginBottom: '12px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '6px 12px', borderRadius: '8px', backgroundColor: 'rgba(234, 179, 8, 0.1)', border: '1px solid rgba(234, 179, 8, 0.2)', fontSize: '10px' }}>
-                    <span style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#EAB308' }}>
-                        <AlertTriangle size={12} />
-                        You've used 15 of your 20 free daily queries.
-                    </span>
-                    <span style={{ color: 'rgba(234, 179, 8, 0.6)' }}>Resets at midnight</span>
-                </div>
+                {showQueryBanner && (
+                    <>
+                        <style>{`
+                            @keyframes popUpBanner {
+                                0% { opacity: 0; transform: translateY(8px) scale(0.98); }
+                                100% { opacity: 1; transform: translateY(0) scale(1); }
+                            }
+                        `}</style>
+                        <div id="query-banner" style={{ animation: 'popUpBanner 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards', marginBottom: '12px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '6px 12px', borderRadius: '8px', backgroundColor: 'rgba(234, 179, 8, 0.1)', border: '1px solid rgba(234, 179, 8, 0.2)', fontSize: '10px' }}>
+                            <span style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#EAB308' }}>
+                                <AlertTriangle size={12} />
+                                {queryBannerText}
+                            </span>
+                            <span style={{ color: 'rgba(234, 179, 8, 0.6)' }}>Resets at midnight</span>
+                        </div>
+                    </>
+                )}
 
                 <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
                     <input
