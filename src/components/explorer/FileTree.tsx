@@ -50,11 +50,11 @@ export default function FileTree({ repository, files, isLoading, selectedPath, o
                         <div className="cc-skeleton" style={{ height: '16px', backgroundColor: '#1E1E2E', borderRadius: '4px', width: '83%' }}></div>
                     </div>
                 ) : files.length === 0 ? (
-                    <div style={{ padding: '16px', fontSize: '12px', color: '#64748B' }}>
+                    <div style={{ padding: '16px', fontSize: '13px', color: '#94A3B8' }}>
                         No files found.
                     </div>
                 ) : (
-                    <div style={{ padding: '0 8px', display: 'flex', flexDirection: 'column', gap: '2px', fontSize: '12px' }}>
+                    <div style={{ padding: '0 8px', display: 'flex', flexDirection: 'column', gap: '2px', fontSize: '13px' }}>
                         {files.map((node, i) => (
                             <TreeNode
                                 key={i}
@@ -94,7 +94,7 @@ function TreeNode({
     onSelect: (path: string) => void
     depth?: number
 }) {
-    const [isOpen, setIsOpen] = useState(false)
+    const [isOpen, setIsOpen] = useState(depth === 0)
     const isSelected = selectedPath === node.path
 
     const isDir = node.type === 'directory' || !!node.children
@@ -103,9 +103,9 @@ function TreeNode({
         return (
             <div>
                 <div
-                    style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: `6px 8px 6px ${depth * 12 + 8}px`, color: '#64748B', borderRadius: '4px', cursor: 'pointer', transition: 'background-color 0.2s' }}
-                    onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#111118'}
-                    onMouseOut={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+                    style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: `6px 8px 6px ${depth * 12 + 8}px`, color: '#94A3B8', borderRadius: '4px', cursor: 'pointer', transition: 'all 0.2s' }}
+                    onMouseOver={(e) => { e.currentTarget.style.backgroundColor = '#111118'; e.currentTarget.style.color = '#F1F5F9' }}
+                    onMouseOut={(e) => { e.currentTarget.style.backgroundColor = 'transparent'; e.currentTarget.style.color = '#94A3B8' }}
                     onClick={() => setIsOpen(!isOpen)}
                 >
                     <ChevronRight size={14} style={{ transition: 'transform 0.2s', transform: isOpen ? 'rotate(90deg)' : 'none' }} />
@@ -139,20 +139,22 @@ function TreeNode({
                 borderRadius: '4px',
                 cursor: 'pointer',
                 backgroundColor: isSelected ? 'rgba(99, 102, 241, 0.1)' : 'transparent',
-                color: isSelected ? '#818CF8' : '#64748B',
+                color: isSelected ? '#818CF8' : '#94A3B8',
                 borderLeft: isSelected ? '2px solid #6366F1' : '2px solid transparent',
-                transition: 'background-color 0.2s, color 0.2s'
+                transition: 'all 0.2s'
             }}
             onMouseOver={(e) => {
                 if (!isSelected) {
                     e.currentTarget.style.backgroundColor = '#111118';
+                    e.currentTarget.style.color = '#F1F5F9';
                     const dot = e.currentTarget.querySelector('.file-dot') as HTMLElement;
-                    if (dot) dot.style.backgroundColor = '#64748B';
+                    if (dot) dot.style.backgroundColor = '#94A3B8';
                 }
             }}
             onMouseOut={(e) => {
                 if (!isSelected) {
                     e.currentTarget.style.backgroundColor = 'transparent';
+                    e.currentTarget.style.color = '#94A3B8';
                     const dot = e.currentTarget.querySelector('.file-dot') as HTMLElement;
                     if (dot) dot.style.backgroundColor = '#1E1E2E';
                 }

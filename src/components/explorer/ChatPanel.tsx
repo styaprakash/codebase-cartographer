@@ -5,6 +5,10 @@ import { ShieldCheck, Database, CreditCard, Zap, Bot, User, FileCode, AlertTrian
 import { useChat } from '@/hooks/useChat'
 import { ChatMessage } from '@/types'
 import { querApi } from '@/lib/api'
+import ReactMarkdown from 'react-markdown'
+import remarkGfm from 'remark-gfm'
+import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter'
+import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism'
 
 interface ChatPanelProps {
     repoId: string
@@ -193,8 +197,48 @@ export default function ChatPanel({ repoId, onFileReference, initialQuery, onCle
                         )}
 
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', flex: msg.role === 'assistant' ? 1 : 'unset', maxWidth: msg.role === 'user' ? '576px' : '100%' }}>
-                            <div className="glass-panel" style={{ padding: '16px', fontSize: '14px', lineHeight: 1.6, color: '#F1F5F9', backgroundColor: msg.role === 'user' ? 'rgba(99, 102, 241, 0.1)' : undefined, border: msg.role === 'user' ? '1px solid rgba(99, 102, 241, 0.3)' : undefined, borderRadius: msg.role === 'user' ? '16px 0 16px 16px' : '0 16px 16px 16px' }}>
-                                <p style={{ whiteSpace: 'pre-wrap', margin: 0 }}>{msg.content}</p>
+                            <div className="glass-panel" style={{ padding: '16px', fontSize: '14px', lineHeight: 1.6, color: '#F1F5F9', backgroundColor: msg.role === 'user' ? 'rgba(99, 102, 241, 0.1)' : undefined, border: msg.role === 'user' ? '1px solid rgba(99, 102, 241, 0.3)' : undefined, borderRadius: msg.role === 'user' ? '16px 0 16px 16px' : '0 16px 16px 16px', overflowX: 'auto' }}>
+                                {msg.role === 'user' ? (
+                                    <p style={{ whiteSpace: 'pre-wrap', margin: 0 }}>{msg.content}</p>
+                                ) : (
+                                    <ReactMarkdown
+                                        remarkPlugins={[remarkGfm]}
+                                        components={{
+                                            p: ({ children }) => <p style={{ margin: '0 0 12px 0' }}>{children}</p>,
+                                            ul: ({ children }) => <ul style={{ margin: '0 0 12px 0', paddingLeft: '24px', listStyleType: 'disc' }}>{children}</ul>,
+                                            ol: ({ children }) => <ol style={{ margin: '0 0 12px 0', paddingLeft: '24px', listStyleType: 'decimal' }}>{children}</ol>,
+                                            li: ({ children }) => <li style={{ margin: '4px 0' }}>{children}</li>,
+                                            h1: ({ children }) => <h1 style={{ fontSize: '20px', fontWeight: 'bold', margin: '16px 0 12px 0', color: '#fff' }}>{children}</h1>,
+                                            h2: ({ children }) => <h2 style={{ fontSize: '18px', fontWeight: 'bold', margin: '16px 0 12px 0', color: '#fff' }}>{children}</h2>,
+                                            h3: ({ children }) => <h3 style={{ fontSize: '16px', fontWeight: 'bold', margin: '16px 0 12px 0', color: '#fff' }}>{children}</h3>,
+                                            strong: ({ children }) => <strong style={{ fontWeight: 600, color: '#fff' }}>{children}</strong>,
+                                            a: ({ href, children }) => <a href={href} style={{ color: '#818CF8', textDecoration: 'underline' }}>{children}</a>,
+                                            // eslint-disable-next-line @typescript-eslint/no-unused-vars, @typescript-eslint/no-explicit-any
+                                            code: ({ node, inline, className, children, ...props }: any) => {
+                                                const match = /language-(\w+)/.exec(className || '')
+                                                return !inline && match ? (
+                                                    <div style={{ margin: '12px 0', borderRadius: '8px', overflow: 'hidden' }}>
+                                                        <SyntaxHighlighter
+                                                            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                                                            style={vscDarkPlus as any}
+                                                            language={match[1]}
+                                                            PreTag="div"
+                                                            {...props}
+                                                        >
+                                                            {String(children).replace(/\n$/, '')}
+                                                        </SyntaxHighlighter>
+                                                    </div>
+                                                ) : (
+                                                    <code style={{ background: 'rgba(255,255,255,0.1)', padding: '2px 4px', borderRadius: '4px', fontSize: '0.9em', color: '#818CF8' }} {...props}>
+                                                        {children}
+                                                    </code>
+                                                )
+                                            }
+                                        }}
+                                    >
+                                        {msg.content}
+                                    </ReactMarkdown>
+                                )}
                             </div>
 
                             {msg.role === 'assistant' && msg.citations && msg.citations.length > 0 && (
